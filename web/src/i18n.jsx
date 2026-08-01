@@ -5,6 +5,8 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 const DICT = {
   // 通用
   "对话": "Chat",
+  "当前对话": "Current Chat",
+  "新对话": "New Chat",
   "聊天记录": "History",
   "Prompt 库": "Prompts",
   "Skills": "Skills",
@@ -22,7 +24,6 @@ const DICT = {
   "新建对话": "New Session",
   "搜索导航…": "Search navigation…",
   "本地用户": "Local user",
-  "新对话": "New Chat",
   "刷新": "Refresh",
   "取消": "Cancel",
   "确定": "OK",

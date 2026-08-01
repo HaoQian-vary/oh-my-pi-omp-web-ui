@@ -81,12 +81,22 @@ export function Sidebar() {
 
         {/* 导航 */}
         <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-px">
+          {/* 新对话：文字入口，替代顶部 + 号 */}
+          <button
+            className="nav-item text-accent"
+            onClick={() => setShowNewDialog(true)}
+            title={t("新建对话") + " (Ctrl+N)"}
+          >
+            <IconPlus size={15} />
+            <span>{t("新对话")}</span>
+          </button>
+          {/* 当前对话 */}
           <button
             className={`nav-item ${view === "chat" ? "active" : ""}`}
             onClick={() => actions.dispatch({ type: "view", view: "chat" })}
           >
             <IconZap size={15} />
-            <span>{t("对话")}</span>
+            <span>{t("当前对话")}</span>
           </button>
           {filtered.map((n) => (
             <button
