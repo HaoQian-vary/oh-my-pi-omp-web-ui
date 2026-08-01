@@ -3,12 +3,13 @@ import { PageShell } from "./PageShell";
 import { IconGlobe } from "../icons";
 
 export function McpView() {
+  const { t } = useLang();
   return (
-    <PageShell title="MCP 服务器" desc="Model Context Protocol 服务器管理。">
+    <PageShell title="MCP 服务器" desc={t("Model Context Protocol 服务器管理。")}>
       <div className="card p-4 space-y-3">
         <div className="flex items-center gap-2">
           <IconGlobe size={15} className="text-accent" />
-          <span className="text-[13px] font-medium">说明</span>
+          <span className="text-[13px] font-medium">{t("说明")}</span>
         </div>
         <p className="text-[12.5px] text-secondary leading-relaxed">
           MCP 服务器在 omp 的配置文件中管理(<span className="font-mono">~/.omp/agent/config.yml</span> 的

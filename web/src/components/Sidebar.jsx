@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { useApp, VIEWS } from "../store";
 import { fmtTokens } from "../format";
+import { useLang } from "../i18n";
 import {
   IconPlus, IconSearch, IconHistory, IconBook, IconFolder, IconPlug, IconBot, IconPuzzle,
   IconCpu, IconSettings, IconChevronLeft, IconMenu, IconUser, IconZap, IconWrench,
@@ -26,6 +27,7 @@ export function Sidebar() {
   const { view, sidebarOpen, state: st } = state;
   const [q, setQ] = useState("");
   const [showNewDialog, setShowNewDialog] = useState(false);
+  const { t } = useLang();
 
   const model = st?.model;
   const cu = st?.contextUsage;
@@ -33,14 +35,14 @@ export function Sidebar() {
   const filtered = useMemo(() => {
     const items = NAV;
     if (!q.trim()) return items;
-    return items.filter((n) => n.label.toLowerCase().includes(q.trim().toLowerCase()));
-  }, [q]);
+    return items.filter((n) => t(n.label).toLowerCase().includes(q.trim().toLowerCase()));
+  }, [q, t]);
 
   return (
     <>
       {/* 折叠态按钮(窄屏或折叠时) */}
       <div className={`${sidebarOpen ? "hidden" : "flex"} items-center justify-center w-9 border-r border-border bg-sidebar flex-col gap-1`}>
-        <button className="btn btn-icon" title="展开侧栏" onClick={() => actions.dispatch({ type: "sidebar", open: true })}>
+        <button className="btn btn-icon" title={t("展开侧栏")} onClick={() => actions.dispatch({ type: "sidebar", open: true })}>
           <IconMenu size={16} />
         </button>
       </div>
@@ -54,12 +56,12 @@ export function Sidebar() {
           </div>
           <button
             className="btn btn-icon"
-            title="新会话 (Ctrl+N)"
+            title={t("新会话") + " (Ctrl+N)"}
             onClick={() => setShowNewDialog(true)}
           >
             <IconPlus size={15} />
           </button>
-          <button className="btn btn-icon" title="折叠侧栏" onClick={() => actions.dispatch({ type: "sidebar", open: false })}>
+          <button className="btn btn-icon" title={t("折叠侧栏")} onClick={() => actions.dispatch({ type: "sidebar", open: false })}>
             <IconChevronLeft size={15} />
           </button>
         </div>
@@ -70,7 +72,7 @@ export function Sidebar() {
             <IconSearch size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
             <input
               className="input pl-7"
-              placeholder="搜索导航…"
+              placeholder={t("搜索导航…")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -84,7 +86,7 @@ export function Sidebar() {
             onClick={() => actions.dispatch({ type: "view", view: "chat" })}
           >
             <IconZap size={15} />
-            <span>对话</span>
+            <span>{t("对话")}</span>
           </button>
           {filtered.map((n) => (
             <button
@@ -93,7 +95,7 @@ export function Sidebar() {
               onClick={() => actions.dispatch({ type: "view", view: n.id })}
             >
               <n.icon size={15} />
-              <span>{n.label}</span>
+              <span>{t(n.label)}</span>
             </button>
           ))}
         </nav>
@@ -104,7 +106,7 @@ export function Sidebar() {
             <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--color-bg-elevated)' }}>
               <IconUser size={11} />
             </div>
-            <span className="truncate flex-1">本地用户</span>
+            <span className="truncate flex-1">{t("本地用户")}</span>
             <span className="text-[10.5px] font-mono text-secondary/70 truncate max-w-[80px]">{st?.sessionId?.slice(0, 8) ?? ""}</span>
           </div>
           <div className="space-y-1 text-[11.5px]">

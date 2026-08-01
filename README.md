@@ -70,6 +70,7 @@ This project is fully open source under the **MIT License** — see [LICENSE](LI
 
 Everything visual and behavioral is configurable from the UI — no config file editing required:
 
+- **Language**: switch between **中文 / English** anytime in **Settings → Appearance** — defaults to Chinese, persisted across restarts
 - **Model switching**: pick your model from the top bar dropdown (grouped by provider, shows context window), or manage the full 120+ model list in **Models** (filter by provider, search, set current)
 - **Appearance**: switch themes anytime in **Settings → Appearance** — Dark / Light / System / Midnight / GitHub Dark / GitHub Light, CSS-variable driven, instant, persisted across restarts
 - **Provider auth**: manage your model credentials from **Settings → Login** — no config file editing
@@ -356,6 +357,7 @@ npm start        # run backend
 
 所有界面与行为设置都在 UI 中完成，无需手动编辑配置文件：
 
+- **界面语言**：随时在**设置 → 外观设置**切换**中文 / English**——默认中文，localStorage 持久化，重启后保留
 - **模型切换**：顶部栏下拉直接切换当前模型（按 Provider 分组、显示上下文窗口）；也可在**模型**页面管理全部 120+ 模型（按 Provider 筛选、搜索、设为当前）
 - **外观主题**：随时在**设置 → 外观设置**切换——Dark / Light / System / Midnight / GitHub Dark / GitHub Light 六套主题，CSS 变量驱动、即时生效、重启后保留
 - **Provider 登录**：在**设置 → 登录**管理模型凭据，无需编辑配置文件

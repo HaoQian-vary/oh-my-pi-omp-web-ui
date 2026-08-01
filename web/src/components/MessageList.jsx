@@ -4,10 +4,12 @@ import { useApp } from "../store";
 import { useChunks, DiffView } from "../md";
 import { fmtClock, fmtCost, fmtTokens, costOf, tokensOf } from "../format";
 import { IconTerminal, IconChevronRight, IconChevronDown, IconCopy, IconCheck, IconBot, IconUser, IconAlert, IconBrain } from "../icons";
+import { useLang } from "../i18n";
 import { useState } from "react";
 
 export function MessageList() {
   const { state } = useApp();
+  const { t } = useLang();
   const { msgs } = state;
   const scrollRef = useRef(null);
   const pinnedRef = useRef(true);
@@ -44,6 +46,7 @@ export function MessageList() {
 
 function Welcome() {
   const { actions } = useApp();
+  const { t } = useLang();
   const suggestions = [
     "解释这个项目的架构",
     "帮我重构 server.mjs",
@@ -57,8 +60,8 @@ function Welcome() {
       </div>
       <h1 className="text-[20px] font-semibold mb-1">omp web</h1>
       <p className="text-secondary text-[13px] mb-8 max-w-md text-center leading-relaxed">
-        本地 AI Agent 工作台,驱动 <span className="font-mono text-primary">omp --mode rpc</span>。
-        <br />输入消息或点击下方建议开始。
+        {t("本地 AI Agent 工作台,驱动")} <span className="font-mono text-primary">omp --mode rpc</span>。
+        <br />{t("输入消息或点击下方建议开始。")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
         {suggestions.map((s) => (
@@ -67,7 +70,7 @@ function Welcome() {
             className="card px-3 py-2.5 text-left text-[12.5px] text-secondary hover:text-primary transition-colors duration-150"
             onClick={() => actions.sendPrompt(s)}
           >
-            {s}
+            {t(s)}
           </button>
         ))}
       </div>
@@ -155,6 +158,7 @@ function TextBlock({ text, streaming }) {
 // ---------- Thinking 折叠 ----------
 function ThinkingBlock({ block, streaming }) {
   const [open, setOpen] = useState(false);
+  const { t } = useLang();
   const text = block.thinking ?? block.text ?? "";
   const lines = text.trim().split("\n").length;
   return (
@@ -168,11 +172,11 @@ function ThinkingBlock({ block, streaming }) {
       >
         {open ? <IconChevronDown size={12} className="text-secondary" /> : <IconChevronRight size={12} className="text-secondary" />}
         <IconBrain size={13} className="text-warning" />
-        <span className="text-[12px] text-warning font-medium">思考</span>
-        <span className="text-[11px] text-secondary">{lines} 行</span>
+        <span className="text-[12px] text-warning font-medium">{t("思考")}</span>
+        <span className="text-[11px] text-secondary">{lines} {t("行")}</span>
         {streaming && <span className="cursor-blink text-[12px] text-warning" />}
         <span className="flex-1" />
-        <span className="text-[11px] text-secondary">{open ? "收起" : "展开"}</span>
+        <span className="text-[11px] text-secondary">{open ? t("收起") : t("展开")}</span>
       </button>
       {open && (
         <div className="px-4 pb-3 term term-dim text-[12.5px] border-t pt-2 max-h-[360px] overflow-y-auto" style={{ background: 'var(--color-terminal-bg)', borderColor: 'var(--color-border)' }}>
@@ -186,6 +190,7 @@ function ThinkingBlock({ block, streaming }) {
 // ---------- 工具调用块 ----------
 function ToolCallBlock({ block }) {
   const { state } = useApp();
+  const { t } = useLang();
   const tool = state.tools.get(block.id);
   const [open, setOpen] = useState(false);
   const name = block.name ?? tool?.toolName ?? "tool";
@@ -226,9 +231,9 @@ function ToolCallBlock({ block }) {
         <span className="font-mono text-[12px] text-accent font-semibold whitespace-nowrap">{name}</span>
         {tool?.intent && <span className="text-[11.5px] text-secondary truncate flex-1">{tool.intent}</span>}
         <span className="flex-1" />
-        {status === "running" && <span className="text-[11px] text-warning flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse inline-block" />运行中</span>}
-        {status === "success" && <span className="text-[11px] text-success">✓ 完成</span>}
-        {status === "error" && <span className="text-[11px] text-error">✗ 失败</span>}
+        {status === "running" && <span className="text-[11px] text-warning flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse inline-block" />{t("运行中")}</span>}
+        {status === "success" && <span className="text-[11px] text-success">✓ {t("完成")}</span>}
+        {status === "error" && <span className="text-[11px] text-error">✗ {t("失败")}</span>}
       </button>
       {(open || autoOpen) && (
         <div className="px-4 pb-3">
@@ -238,7 +243,7 @@ function ToolCallBlock({ block }) {
           {hasOutput && (
             <pre className={`term ${tool?.status === "error" ? "term-err" : ""} max-h-[280px] overflow-y-auto`}>{output}</pre>
           )}
-          {status === "running" && !hasOutput && <div className="term term-dim text-[11.5px]">执行中…</div>}
+          {status === "running" && !hasOutput && <div className="term term-dim text-[11.5px]">{t("执行中…")}</div>}
         </div>
       )}
     </div>
@@ -248,6 +253,7 @@ function ToolCallBlock({ block }) {
 // ---------- 工具结果块 ----------
 function ToolResultBlock({ block }) {
   const [open, setOpen] = useState(false);
+  const { t } = useLang();
   const text = useMemo(() => {
     const c = block.content;
     if (typeof c === "string") return c;
@@ -255,7 +261,7 @@ function ToolResultBlock({ block }) {
     return "";
   }, [block]);
   const isErr = block.isError;
-  const title = `${block.toolName ?? "tool"} 结果`;
+  const title = `${block.toolName ?? "tool"} ${t("结果")}`;
   if (!text.trim() && !isErr) return null;
   return (
     <div className="border-b border-border">
@@ -271,7 +277,7 @@ function ToolResultBlock({ block }) {
           {isErr ? "✗" : "✓"} {title}
         </span>
         <span className="flex-1" />
-        <span className="text-[11px] text-secondary">{open ? "收起" : `${text.length} 字符`}</span>
+        <span className="text-[11px] text-secondary">{open ? t("收起") : `${text.length} ${t("字符")}`}</span>
       </button>
       {open && (
         <pre className={`term px-4 pb-3 pt-1 max-h-[300px] overflow-y-auto ${isErr ? "term-err" : ""}`}>{text}</pre>
@@ -282,6 +288,7 @@ function ToolResultBlock({ block }) {
 
 // ---------- 消息元信息(tokens / 费用) ----------
 function MessageMeta({ msg }) {
+  const { t } = useLang();
   const [copied, setCopied] = useState(false);
   const usage = msg.meta?.usage;
   const cost = costOf(usage);

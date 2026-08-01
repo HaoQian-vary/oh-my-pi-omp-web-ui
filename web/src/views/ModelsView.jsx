@@ -1,11 +1,13 @@
 // 模型管理:列表、搜索、过滤、切换默认模型。
 import { useMemo, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import { fmtTokens, fmtCost } from "../format";
 import { IconSearch, IconCheck, IconCpu } from "../icons";
 
 export function ModelsView() {
+  const { t } = useLang();
   const { state, actions } = useApp();
   const { models, state: st } = state;
   const [q, setQ] = useState("");
@@ -28,8 +30,8 @@ export function ModelsView() {
     setBusy(`${m.provider}/${m.id}`);
     try {
       const r = await actions.setModel(m.provider, m.id);
-      if (r?.ok) actions.toast(`已切换默认模型: ${m.id}`);
-      else actions.toast(`失败: ${r?.error ?? ""}`, "bad");
+      if (r?.ok) actions.toast(`${t("已切换默认模型: ")}${m.id}`);
+      else actions.toast(`${t("失败")}: ${r?.error ?? ""}`, "bad");
     } finally {
       setBusy(null);
     }
@@ -40,13 +42,13 @@ export function ModelsView() {
       title="模型管理"
       desc={`当前 ${models.length} 个可用模型。点击"设为当前"切换。`}
       actions={
-        <button className="btn btn-ghost" onClick={() => actions.refreshModels()}>刷新</button>
+        <button className="btn btn-ghost" onClick={() => actions.refreshModels()}>{t("刷新")}</button>
       }
     >
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
           <IconSearch size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-          <input className="input pl-7" placeholder="搜索模型…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="input pl-7" placeholder={t("搜索模型…")} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="flex gap-1 flex-wrap">
           {providers.map((p) => (
@@ -66,7 +68,7 @@ export function ModelsView() {
               <th className="px-3 py-2 font-medium text-right hidden sm:table-cell">Context</th>
               <th className="px-3 py-2 font-medium text-right hidden lg:table-cell">Max Tokens</th>
               <th className="px-3 py-2 font-medium hidden lg:table-cell">Reasoning</th>
-              <th className="px-3 py-2 font-medium text-right hidden md:table-cell">成本</th>
+              <th className="px-3 py-2 font-medium text-right hidden md:table-cell">{t("成本")}</th>
               <th className="px-3 py-2 font-medium text-right">操作</th>
             </tr>
           </thead>
@@ -91,10 +93,10 @@ export function ModelsView() {
                   <td className="px-3 py-2.5 text-[12px] font-mono text-right hidden md:table-cell">{fmtCost(m.cost?.input)}</td>
                   <td className="px-3 py-2.5 text-right">
                     {isCurrent ? (
-                      <span className="inline-flex items-center gap-1 text-[11.5px] text-success"><IconCheck size={12} /> 当前</span>
+                      <span className="inline-flex items-center gap-1 text-[11.5px] text-success"><IconCheck size={12} /> {t("当前")}</span>
                     ) : (
                       <button className="btn h-6 text-[11.5px]" disabled={busy === `${m.provider}/${m.id}`} onClick={() => setDefault(m)}>
-                        {busy === `${m.provider}/${m.id}` ? "切换中…" : "设为当前"}
+                        {busy === `${m.provider}/${m.id}` ? t("切换中…") : t("设为当前")}
                       </button>
                     )}
                   </td>
@@ -102,7 +104,7 @@ export function ModelsView() {
               );
             })}
             {!filtered.length && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-secondary text-[13px]">无匹配模型</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-secondary text-[13px]">{t("无匹配模型")}</td></tr>
             )}
           </tbody>
         </table>

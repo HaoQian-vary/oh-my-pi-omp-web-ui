@@ -1,11 +1,13 @@
 // 新建对话弹窗组件：名称（可选）+ 工作文件夹（可选，带目录浏览选择器）。
 import { useEffect, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { api } from "../api";
 import { IconFolder, IconX, IconChevronRight, IconRefresh } from "../icons";
 
 export function NewSessionDialog({ onClose, onCreated }) {
   const { state, actions } = useApp();
+  const { t } = useLang();
   const [name, setName] = useState("");
   const [cwd, setCwd] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,7 @@ export function NewSessionDialog({ onClose, onCreated }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-fade-in">
       <div className="w-[520px] max-w-[92vw] card shadow-2xl animate-slide-up" style={{ background: 'var(--color-card)' }}>
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-          <h2 className="text-[15px] font-semibold">新建对话</h2>
+          <h2 className="text-[15px] font-semibold">{t("新建对话")}</h2>
           <button className="btn btn-icon" onClick={onClose}>
             <IconX size={13} />
           </button>
@@ -47,25 +49,25 @@ export function NewSessionDialog({ onClose, onCreated }) {
           {/* 对话名称 */}
           <div>
             <label className="text-[12.5px] text-secondary block mb-1.5">
-              对话名称 <span className="text-secondary/60">(可选)</span>
+              {t("对话名称")} <span className="text-secondary/60">({t("可选")})</span>
             </label>
             <input
               className="input h-8"
-              placeholder="例如：重构 server.mjs"
+              placeholder={t("例如：重构 server.mjs")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               autoFocus
             />
             <p className="text-[11px] text-secondary mt-1">
-              设置后显示在会话标题和聊天记录中。
+              {t("设置后显示在会话标题和聊天记录中。")}
             </p>
           </div>
 
           {/* 工作文件夹 */}
           <div>
             <label className="text-[12.5px] text-secondary block mb-1.5">
-              工作文件夹 <span className="text-secondary/60">(可选)</span>
+              {t("工作文件夹")} <span className="text-secondary/60">({t("可选")})</span>
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -88,7 +90,7 @@ export function NewSessionDialog({ onClose, onCreated }) {
               )}
             </div>
             <p className="text-[11px] text-secondary mt-1.5">
-              不填写则使用当前默认工作区。选择后该对话的模型将在所选文件夹中工作。
+              {t("不填写则使用当前默认工作区。选择后该对话的模型将在所选文件夹中工作。")}
             </p>
           </div>
         </div>
@@ -115,6 +117,7 @@ export function NewSessionDialog({ onClose, onCreated }) {
 
 // 目录浏览选择器
 function DirPicker({ onSelect, onClose }) {
+  const { t } = useLang();
   const [path, setPath] = useState(null); // null = 盘符列表
   const [dirs, setDirs] = useState([]);
   const [parent, setParent] = useState(null);
@@ -172,7 +175,7 @@ function DirPicker({ onSelect, onClose }) {
         {!loading && (
           <div className="flex-1 overflow-y-auto p-2 max-h-[360px]">
             {dirs.length === 0 && (
-              <div className="py-6 text-center text-[12px] text-secondary">此文件夹下没有子目录</div>
+              <div className="py-6 text-center text-[12px] text-secondary">{t("此文件夹下没有子目录")}</div>
             )}
             {dirs.map((d) => (
               <div
@@ -196,7 +199,7 @@ function DirPicker({ onSelect, onClose }) {
           <button className="btn" onClick={onClose}>取消</button>
           {path && (
             <button className="btn btn-primary" onClick={() => onSelect(path)}>
-              选择此文件夹
+              {t("选择此文件夹")}
             </button>
           )}
         </div>

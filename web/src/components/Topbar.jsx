@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useApp, LEVELS } from "../store";
 import { IconChevronDown, IconPanelRight, IconStop, IconPlus, IconCheck } from "../icons";
 import { fmtTokens } from "../format";
+import { useLang } from "../i18n";
 
 export function Topbar() {
   const { state, actions } = useApp();
@@ -10,6 +11,7 @@ export function Topbar() {
   const [modelOpen, setModelOpen] = useState(false);
   const [levelOpen, setLevelOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { t } = useLang();
 
   const model = st?.model;
   const isStreaming = st?.isStreaming ?? false;
@@ -49,7 +51,7 @@ export function Topbar() {
     setBusy(true);
     try {
       const r = await actions.setModel(provider, modelId);
-      if (!r?.ok) actions.toast(`切换失败: ${r?.error ?? ""}`, "bad");
+      if (!r?.ok) actions.toast(`${t("切换失败")}: ${r?.error ?? ""}`, "bad");
     } finally {
       setBusy(false);
     }
@@ -58,7 +60,7 @@ export function Topbar() {
   const switchLevel = async (level) => {
     setLevelOpen(false);
     const r = await actions.setThinking(level);
-    if (!r?.ok) actions.toast(`设置失败: ${r?.error ?? ""}`, "bad");
+    if (!r?.ok) actions.toast(`${t("设置失败")}: ${r?.error ?? ""}`, "bad");
   };
 
   const closeAll = () => {
@@ -76,10 +78,10 @@ export function Topbar() {
       <div className="flex items-center gap-2 px-3 h-11 border-b shrink-0" style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)' }}>
         {/* 会话名 + 工作目录 */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[13px] font-medium truncate max-w-[160px]" title={st?.sessionName ?? "新会话"}>
-            {st?.sessionName ?? "新会话"}
+          <span className="text-[13px] font-medium truncate max-w-[160px]" title={st?.sessionName ?? t("新会话")}>
+            {st?.sessionName ?? t("新会话")}
           </span>
-          <span className="hidden md:inline text-[11px] font-mono truncate max-w-[180px]" style={{ color: 'var(--color-text-secondary)' }} title="当前工作目录">
+          <span className="hidden md:inline text-[11px] font-mono truncate max-w-[180px]" style={{ color: 'var(--color-text-secondary)' }} title={t("当前工作目录")}>
             {workDir}
           </span>
         </div>
@@ -97,17 +99,17 @@ export function Topbar() {
               onMouseLeave={(e) => { if (!modelOpen) e.currentTarget.style.background = 'transparent'; }}
               onClick={(e) => { e.stopPropagation(); setModelOpen(!modelOpen); setLevelOpen(false); }}
               disabled={busy}
-              title="点击切换模型"
+              title={t("点击切换模型")}
             >
               <span className="font-mono truncate max-w-[120px]" style={{ color: 'var(--color-text-secondary)' }}>
-                {model?.name ?? model?.id ?? "选择模型"}
+                {model?.name ?? model?.id ?? t("选择模型")}
               </span>
               <IconChevronDown size={10} style={{ color: 'var(--color-text-secondary)' }} className="shrink-0" />
             </button>
             {modelOpen && (
               <div className="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto card shadow-xl z-50 animate-fade-in" style={{ background: 'var(--color-card)' }}>
                 <div className="px-3 py-2 text-[11px] border-b" style={{ color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}>
-                  模型 · {models.length} 个可用
+                  {t("模型")} · {models.length} {t("个可用")}
                 </div>
                 <div className="py-1">
                   {Object.entries(groups).map(([provider, list]) => (
@@ -139,7 +141,7 @@ export function Topbar() {
                     </div>
                   ))}
                   {!models.length && (
-                    <div className="px-3 py-3 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>暂无可用模型</div>
+                    <div className="px-3 py-3 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{t("暂无可用模型")}</div>
                   )}
                 </div>
               </div>
@@ -167,7 +169,7 @@ export function Topbar() {
                 setLevelOpen(!levelOpen); 
                 setModelOpen(false); 
               }}
-              title={supportsThinking ? `点击切换思考级别（${availableLevels.length} 个可用）` : "该模型不支持思考级别"}
+              title={supportsThinking ? `${t("点击切换思考级别（")}${availableLevels.length}${t("个可用）")}` : t("该模型不支持思考级别")}
             >
               <span>{currentLevel ?? "—"}</span>
               <IconChevronDown size={10} className="shrink-0" />
@@ -175,7 +177,7 @@ export function Topbar() {
             {levelOpen && supportsThinking && (
               <div className="absolute right-0 top-full mt-1 w-40 card shadow-xl z-50 animate-fade-in py-1" style={{ background: 'var(--color-card)' }}>
                 <div className="px-3 pb-1 pt-1.5 text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
-                  思考级别 · {model?.id}
+                  {t("思考级别")} · {model?.id}
                 </div>
                 {availableLevels.map((l) => (
                   <button
@@ -203,18 +205,18 @@ export function Topbar() {
           isStreaming ? "border-warning/50 text-warning" : "border-border text-secondary"
         }`}>
           <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-warning animate-pulse" : "bg-success"}`} />
-          {isStreaming ? "运行中" : "空闲"}
+          {isStreaming ? t("运行中") : t("空闲")}
         </div>
 
-        <button className="btn btn-icon" title="停止 (Esc)" onClick={() => actions.abort()} disabled={!isStreaming}>
+        <button className="btn btn-icon" title={`${t("停止")} (Esc)`} onClick={() => actions.abort()} disabled={!isStreaming}>
           <IconStop size={14} />
         </button>
         <button
           className="btn btn-icon"
-          title="新会话"
+          title={t("新会话")}
           onClick={async () => {
             const ok = await actions.newSession();
-            if (ok) actions.toast("已新建会话");
+            if (ok) actions.toast(t("已新建会话"));
           }}
         >
           <IconPlus size={14} />

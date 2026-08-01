@@ -1,6 +1,7 @@
 // Prompt 库:分类、搜索、收藏、一键使用。
 import { useMemo, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import { IconSearch, IconStar, IconSparkle } from "../icons";
 
@@ -16,6 +17,7 @@ const LIBRARY = [
 ];
 
 export function PromptsView() {
+  const { t } = useLang();
   const { actions } = useApp();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("全部");
@@ -34,20 +36,20 @@ export function PromptsView() {
     actions.dispatch({ type: "view", view: "chat" });
     // 填充输入框:通过自定义事件交给 Composer
     window.dispatchEvent(new CustomEvent("omp:fill-prompt", { detail: p.prompt }));
-    actions.toast(`已填入: ${p.name}`);
+    actions.toast(`${t("已填入: ")}${p.name}`);
   };
 
   return (
-    <PageShell title="Prompt 库" desc="常用 prompt 模板,一键填入输入框。">
+    <PageShell title={t("Prompt 库")} desc={t("常用 prompt 模板,一键填入输入框。")}>
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
           <IconSearch size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
-          <input className="input pl-7" placeholder="搜索 prompt…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="input pl-7" placeholder={t("搜索 prompt…")} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="flex gap-1 flex-wrap">
           {cats.map((c) => (
             <button key={c} className={`btn h-7 text-[12px] ${cat === c ? "bg-accent border-accent text-white" : ""}`} onClick={() => setCat(c)}>
-              {c}
+              {t(c)}
             </button>
           ))}
         </div>
@@ -58,11 +60,11 @@ export function PromptsView() {
             <div className="flex items-center gap-2 mb-1.5">
               <IconSparkle size={13} className="text-accent" />
               <span className="text-[13px] font-medium">{p.name}</span>
-              <span className="text-[10.5px] text-secondary px-1.5 py-px rounded" style={{ background: 'var(--color-bg-elevated)' }}>{p.cat}</span>
+              <span className="text-[10.5px] text-secondary px-1.5 py-px rounded" style={{ background: 'var(--color-bg-elevated)' }}>{t(p.cat)}</span>
               <span className="flex-1" />
               <button
                 className={`btn btn-icon ${favs.has(p.name) ? "text-warning" : ""}`}
-                title="收藏"
+                title={t("收藏")}
                 onClick={() => setFavs((s) => { const n = new Set(s); n.has(p.name) ? n.delete(p.name) : n.add(p.name); return n; })}
               >
                 <IconStar size={13} />
@@ -70,7 +72,7 @@ export function PromptsView() {
             </div>
             <p className="text-[12px] text-secondary leading-relaxed line-clamp-2 mb-2">{p.prompt}</p>
             <button className="btn btn-ghost text-[12px] opacity-0 group-hover:opacity-100 transition-opacity duration-150" onClick={() => usePrompt(p)}>
-              一键使用
+              {t("一键使用")}
             </button>
           </div>
         ))}

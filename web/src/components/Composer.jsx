@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store";
 import { IconSend, IconStop, IconPaperclip, IconImage, IconX, IconSparkle } from "../icons";
+import { useLang } from "../i18n";
 
 const SLASH_COMMANDS = [
   { cmd: "/resume", desc: "恢复历史会话" },
@@ -16,6 +17,7 @@ export function Composer() {
   const { state, actions } = useApp();
   const { state: st } = state;
   const isStreaming = st?.isStreaming ?? false;
+  const { t } = useLang();
   const [text, setText] = useState("");
   const [images, setImages] = useState([]); // {dataUrl, name}
   const [slashOpen, setSlashOpen] = useState(false);
@@ -65,7 +67,7 @@ export function Composer() {
     if (isStreaming) {
       // 运行中：作为插话（steer）发送，暂停当前输出插入新指令
       const ok = await actions.steer(t);
-      if (!ok) actions.toast("插话失败", "bad");
+      if (!ok) actions.toast(t("插话失败"), "bad");
       return;
     }
     if (t.startsWith("/")) {
@@ -117,7 +119,7 @@ export function Composer() {
     const list = [...(files ?? [])];
     for (const f of list) {
       if (!f.type.startsWith("image/")) {
-        actions.toast(`仅支持图片: ${f.name}`, "warn");
+        actions.toast(`${t("仅支持图片: ")}${f.name}`, "warn");
         continue;
       }
       const reader = new FileReader();
@@ -146,7 +148,7 @@ export function Composer() {
         {/* slash 命令菜单 */}
         {slashOpen && slashMatch && (
           <div className="absolute bottom-full left-0 right-0 mb-1 card shadow-xl z-40 overflow-hidden animate-slide-up" style={{ background: 'var(--color-card)' }}>
-            <div className="px-3 py-1.5 text-[10.5px] border-b" style={{ color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}>Slash 命令</div>
+            <div className="px-3 py-1.5 text-[10.5px] border-b" style={{ color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}>{t("Slash 命令")}</div>
             {slashMatch.map((c, i) => (
               <button
                 key={c.cmd}
@@ -156,7 +158,7 @@ export function Composer() {
                 onClick={() => applySlash(c)}
               >
                 <span className="font-mono text-accent w-20 shrink-0">{c.cmd}</span>
-                <span className="truncate" style={{ color: 'var(--color-text-secondary)' }}>{c.desc}</span>
+                <span className="truncate" style={{ color: 'var(--color-text-secondary)' }}>{t(c.desc)}</span>
               </button>
             ))}
           </div>
@@ -186,36 +188,36 @@ export function Composer() {
             ref={taRef}
             className="w-full bg-transparent border-0 outline-none resize-none px-3 pt-2.5 pb-1 text-[13.5px] leading-relaxed"
             style={{ color: 'var(--color-text-primary)' }}
-            placeholder={isStreaming ? "运行中… 输入内容并按 Enter 插话，或点停止终止" : "输入消息 — Enter 发送,Shift+Enter 换行,Ctrl+Enter 发送,输入 / 查看命令"}
+            placeholder={isStreaming ? t("运行中… 输入内容并按 Enter 插话，或点停止终止") : t("输入消息 — Enter 发送,Shift+Enter 换行,Ctrl+Enter 发送,输入 / 查看命令")}
             rows={1}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
           />
           <div className="flex items-center gap-1 px-1.5 pb-1.5">
-            <button className="btn btn-icon" title="上传图片（可随插话发送）" onClick={() => fileRef.current?.click()}>
+            <button className="btn btn-icon" title={t("上传图片")} onClick={() => fileRef.current?.click()}>
               <IconImage size={14} />
             </button>
-            <button className="btn btn-icon" title="拖拽图片到此处" onClick={() => fileRef.current?.click()}>
+            <button className="btn btn-icon" title={t("拖拽图片到此处")} onClick={() => fileRef.current?.click()}>
               <IconPaperclip size={14} />
             </button>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { pickFiles(e.target.files); e.target.value = ""; }} />
             <span className="flex-1" />
             <span className="hidden sm:inline text-[10.5px] text-secondary mr-1">
-              {isStreaming ? "输入后 Enter 插话" : "Enter 发送"}
+              {isStreaming ? t("输入后 Enter 插话") : t("Enter 发送")}
             </span>
             {isStreaming ? (
               <>
-                <button className="btn h-8 px-3" onClick={send} disabled={!text.trim()} title="暂停当前输出，插入这句话">
-                  <IconSend size={13} /> 插话
+                <button className="btn h-8 px-3" onClick={send} disabled={!text.trim()} title={t("暂停当前输出，插入这句话")}>
+                  <IconSend size={13} /> {t("插话")}
                 </button>
-                <button className="btn btn-danger h-8 px-3" onClick={() => actions.abort()} title="终止当前回复（Esc）">
-                  <IconStop size={13} /> 停止
+                <button className="btn btn-danger h-8 px-3" onClick={() => actions.abort()} title={`${t("终止当前回复")} (Esc)`}>
+                  <IconStop size={13} /> {t("停止")}
                 </button>
               </>
             ) : (
               <button className="btn btn-primary h-8 px-3.5" onClick={send} disabled={!text.trim()}>
-                <IconSend size={13} /> 发送
+                <IconSend size={13} /> {t("发送")}
               </button>
             )}
           </div>
@@ -226,7 +228,7 @@ export function Composer() {
           <IconSparkle size={10} className="text-accent" />
           <span>omp {st?.model?.id ?? ""} · {st?.thinkingLevel ?? ""} thinking</span>
           <span className="flex-1" />
-          <span>Shift+Enter 换行 · Esc 停止</span>
+          <span>{t("Shift+Enter 换行 · Esc 停止")}</span>
         </div>
       </div>
     </div>

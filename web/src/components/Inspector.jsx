@@ -1,6 +1,7 @@
 // 右侧 Inspector:Tabs = Context / Files / Logs / Tasks / Memory / Tools / MCP / Variables。
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { fmtTokens, fmtBytes, fmtCost } from "../format";
 import { IconPanelRight, IconX, IconFileText, IconLogs, IconCheckSquare, IconBrain, IconWrench, IconGlobe, IconCpu, IconLayers, IconTerminal, IconChevronRight, IconChevronDown } from "../icons";
 
@@ -55,12 +56,13 @@ export function Inspector() {
 // ---------- Context ----------
 function ContextTab() {
   const { state } = useApp();
+  const { t } = useLang();
   const st = state.state;
   const cu = st?.contextUsage;
   const pct = cu?.percent ?? 0;
   return (
     <div className="p-3 space-y-3">
-      <Section title="上下文占用">
+      <Section title={t("上下文占用")}>
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-elevated)' }}>
           <div
             className={`h-full rounded-full ${pct > 80 ? "bg-error" : pct > 60 ? "bg-warning" : "bg-accent"}`}
@@ -75,14 +77,14 @@ function ContextTab() {
           使用率 <span className={`font-mono ${pct > 80 ? "text-error" : "text-primary"}`}>{pct.toFixed(1)}%</span>
         </div>
       </Section>
-      <Section title="会话">
+      <Section title={t("会话")}>
         <KV k="ID" v={<span className="font-mono text-[10.5px] break-all">{st?.sessionId ?? "—"}</span>} />
-        <KV k="消息数" v={st?.messageCount ?? 0} />
-        <KV k="队列" v={st?.queuedMessageCount ?? 0} />
-        <KV k="自动压缩" v={st?.autoCompactionEnabled ? "开" : "关"} />
+        <KV k={t("消息数")} v={st?.messageCount ?? 0} />
+        <KV k={t("队列")} v={st?.queuedMessageCount ?? 0} />
+        <KV k={t("自动压缩")} v={st?.autoCompactionEnabled ? "开" : "关"} />
         <KV k="Fast Mode" v={st?.fastModeActive ? "激活" : st?.fastModeEnabled ? "启用" : "关"} />
       </Section>
-      <Section title="模型">
+      <Section title={t("模型")}>
         <KV k="Provider" v={<span className="font-mono">{st?.model?.provider ?? "—"}</span>} />
         <KV k="Model" v={<span className="font-mono">{st?.model?.id ?? "—"}</span>} />
         <KV k="Base URL" v={<span className="font-mono text-[10.5px] break-all">{st?.model?.baseUrl ?? "—"}</span>} />
@@ -90,7 +92,7 @@ function ContextTab() {
         <KV k="Max Tokens" v={<span className="font-mono">{fmtTokens(st?.model?.maxTokens)}</span>} />
         <KV k="Reasoning" v={st?.model?.reasoning ? "支持" : "不支持"} />
       </Section>
-      <Section title="队列模式">
+      <Section title={t("队列模式")}>
         <KV k="Steering" v={st?.steeringMode ?? "—"} />
         <KV k="Follow-up" v={st?.followUpMode ?? "—"} />
         <KV k="Interrupt" v={st?.interruptMode ?? "—"} />
@@ -101,6 +103,7 @@ function ContextTab() {
 
 // ---------- Files(工作区文件,来自 /api/files) ----------
 function FilesTab() {
+  const { t } = useLang();
   const [files, setFiles] = useState(null);
   const [err, setErr] = useState(null);
   useEffect(() => {
@@ -114,9 +117,9 @@ function FilesTab() {
   }, []);
   return (
     <div className="p-3">
-      <Section title="工作区文件">
+      <Section title={t("工作区文件")}>
         {err && <div className="text-[11.5px] text-error">{err}</div>}
-        {!files && !err && <div className="text-[11.5px] text-secondary">加载中…</div>}
+        {!files && !err && <div className="text-[11.5px] text-secondary">{t("加载中…")}</div>}
         {files && (
           <div className="space-y-px max-h-[480px] overflow-y-auto">
             {files.map((f) => (
@@ -136,11 +139,12 @@ function FilesTab() {
 // ---------- Logs ----------
 function LogsTab() {
   const { state } = useApp();
+  const { t } = useLang();
   const logs = state.childLog;
   return (
     <div className="p-3">
       <Section title="omp stderr">
-        {!logs.length && <div className="text-[11.5px] text-secondary">暂无日志</div>}
+        {!logs.length && <div className="text-[11.5px] text-secondary">{t("暂无日志")}</div>}
         <pre className="term term-dim text-[11px] max-h-[560px] overflow-y-auto whitespace-pre-wrap break-all">
           {logs.map((l) => l.text).join("\n")}
         </pre>
@@ -152,13 +156,14 @@ function LogsTab() {
 // ---------- Tasks(todo 树) ----------
 function TasksTab() {
   const { state } = useApp();
+  const { t } = useLang();
   const st = state.state;
   const phases = st?.todoPhases ?? [];
   const [open, setOpen] = useState(true);
   return (
     <div className="p-3">
-      <Section title={`任务 (${phases.reduce((n, p) => n + p.tasks.length, 0)})`}>
-        {!phases.length && <div className="text-[11.5px] text-secondary">暂无任务</div>}
+      <Section title={`${t("任务")} (${phases.reduce((n, p) => n + p.tasks.length, 0)})`}>
+        {!phases.length && <div className="text-[11.5px] text-secondary">{t("暂无任务")}</div>}
         <div className="space-y-2">
           {phases.map((p) => (
             <div key={p.id}>
@@ -196,13 +201,14 @@ function MemoryTab() {
 // ---------- Tools(会话内工具) ----------
 function ToolsTab() {
   const { state } = useApp();
+  const { t } = useLang();
   const st = state.state;
   const tools = st?.dumpTools ?? [];
   const active = [...state.tools.values()];
   return (
     <div className="p-3 space-y-3">
       {active.length > 0 && (
-        <Section title={`本轮工具 (${active.length})`}>
+        <Section title={`${t("本轮工具")} (${active.length})`}>
           <div className="space-y-1">
             {active.map((t, i) => (
               <div key={i} className="flex items-center gap-2 text-[11.5px]">
@@ -215,8 +221,8 @@ function ToolsTab() {
           </div>
         </Section>
       )}
-      <Section title={`可用工具 (${tools.length})`}>
-        {!tools.length && <div className="text-[11.5px] text-secondary">暂无工具信息</div>}
+      <Section title={`${t("可用工具")} (${tools.length})`}>
+        {!tools.length && <div className="text-[11.5px] text-secondary">{t("暂无工具信息")}</div>}
         <div className="space-y-px">
           {tools.map((t) => (
             <div key={t.name} className="flex items-start gap-2 py-1 text-[11.5px]">

@@ -1,6 +1,7 @@
 // Agents 页面：展示可用任务代理（agents）及如何在对话中使用。
 import { useEffect, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import { IconBot, IconRefresh, IconSparkle, IconChevronRight } from "../icons";
 
@@ -15,6 +16,7 @@ const BUILTIN_AGENTS = [
 ];
 
 export function AgentsView() {
+  const { t } = useLang();
   const { actions } = useApp();
   const [agents, setAgents] = useState(null); // 运行中的子代理
   const [err, setErr] = useState(null);
@@ -44,7 +46,7 @@ export function AgentsView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agent: name }),
       }).then((res) => res.json());
-      actions.toast(r.ok ? r.message : `失败: ${r.error ?? ""}`, r.ok ? "" : "bad");
+      actions.toast(r.ok ? r.message : `${t("失败")}: ${r.error ?? ""}`, r.ok ? "" : "bad");
     } finally {
       setBusy(null);
     }
@@ -53,9 +55,9 @@ export function AgentsView() {
   return (
     <PageShell
       title="Agents"
-      desc="任务代理：在主对话中分派子任务给指定 agent 并行执行。"
+      desc={t("任务代理：在主对话中分派子任务给指定 agent 并行执行。")}
       actions={
-        <button className="btn btn-ghost" onClick={load} title="刷新">
+        <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
           <IconRefresh size={13} /> 刷新
         </button>
       }
@@ -64,7 +66,7 @@ export function AgentsView() {
       <div className="card p-4 mb-4">
         <div className="flex items-center gap-2 mb-2">
           <IconSparkle size={15} className="text-accent" />
-          <span className="text-[13px] font-medium">如何在对话中使用 Agents</span>
+          <span className="text-[13px] font-medium">{t("如何在对话中使用 Agents")}</span>
         </div>
         <p className="text-[12.5px] text-secondary leading-relaxed mb-2">
           Agents 通过对话中的 <span className="font-mono text-accent">task</span> 工具使用。在主对话中直接说，例如：
@@ -82,7 +84,7 @@ export function AgentsView() {
       {err && <div className="text-[13px] text-error mb-3">{err}</div>}
 
       {/* 可用 agents */}
-      <h3 className="text-[11px] uppercase tracking-wider text-secondary/70 font-semibold mb-2 px-1">可用 Agents</h3>
+      <h3 className="text-[11px] uppercase tracking-wider text-secondary/70 font-semibold mb-2 px-1">{t("可用 Agents")}</h3>
       <div className="space-y-2 mb-6">
         {customAgents.map((a) => (
           <AgentCard key={`custom-${a.name}`} name={a.name} desc={a.description} tools={a.tools} source="自定义" onTest={() => testAgent(a.name)} busy={busy === a.name} />
@@ -93,12 +95,12 @@ export function AgentsView() {
       </div>
 
       {/* 运行中的子代理 */}
-      <h3 className="text-[11px] uppercase tracking-wider text-secondary/70 font-semibold mb-2 px-1">当前会话子代理</h3>
-      {!agents && !err && <div className="text-secondary text-[13px] py-4 text-center">加载中…</div>}
+      <h3 className="text-[11px] uppercase tracking-wider text-secondary/70 font-semibold mb-2 px-1">{t("当前会话子代理")}</h3>
+      {!agents && !err && <div className="text-secondary text-[13px] py-4 text-center">{t("加载中…")}</div>}
       {agents && !agents.length && (
         <div className="text-secondary text-[13px] py-4 text-center flex flex-col items-center gap-2">
           <IconBot size={20} className="opacity-40" />
-          暂无运行中的子代理
+          {t("暂无运行中的子代理")}
         </div>
       )}
       <div className="space-y-1.5">
@@ -113,7 +115,7 @@ export function AgentsView() {
 
       {/* 自定义 agent 说明 */}
       <div className="card p-4 mt-4">
-        <h3 className="text-[12.5px] font-medium mb-2">创建自定义 Agent</h3>
+        <h3 className="text-[12.5px] font-medium mb-2">{t("创建自定义 Agent")}</h3>
         <p className="text-[12px] text-secondary leading-relaxed">
           在 <span className="font-mono">.omp/agents/&lt;name&gt;.md</span>（项目级）或
           <span className="font-mono"> ~/.omp/agent/agents/</span>（用户级）创建 Markdown 文件：
@@ -132,6 +134,7 @@ tools: read, search, edit
 }
 
 function AgentCard({ name, desc, tools, source, onTest, busy }) {
+  const { t } = useLang();
   return (
     <div className="card px-4 py-3 flex items-start gap-3">
       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-muted)' }}>
@@ -147,8 +150,8 @@ function AgentCard({ name, desc, tools, source, onTest, busy }) {
         {desc && <p className="text-[12px] text-secondary mt-0.5">{desc}</p>}
         {tools && <div className="text-[11px] text-secondary/70 mt-1 font-mono">{tools}</div>}
       </div>
-      <button className="btn h-7 shrink-0" onClick={onTest} disabled={busy} title="测试该 agent 是否可用">
-        {busy ? "测试中…" : "测试"}
+      <button className="btn h-7 shrink-0" onClick={onTest} disabled={busy} title={t("测试")}>
+        {busy ? t("测试中…") : t("测试")}
       </button>
     </div>
   );

@@ -1,6 +1,7 @@
 // 聊天记录:列出历史会话,支持切换、分组、搜索、管理。
 import { useEffect, useState, useMemo } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import { fmtTime } from "../format";
 import {
@@ -18,6 +19,7 @@ const GROUPS = [
 
 export function SessionsView() {
   const { state, actions } = useApp();
+  const { t } = useLang();
   const [sessions, setSessions] = useState(null);
   const [err, setErr] = useState(null);
   const [switching, setSwitching] = useState(null);
@@ -45,7 +47,7 @@ export function SessionsView() {
         actions.toast(`已切换到 ${s.name || s.id.slice(0, 8)}`);
         actions.dispatch({ type: "view", view: "chat" });
       } else {
-        actions.toast("切换失败", "bad");
+        actions.toast(t("切换失败"), "bad");
       }
     } finally {
       setSwitching(null);
@@ -56,10 +58,10 @@ export function SessionsView() {
     if (!renameValue.trim()) return;
     const ok = await actions.renameSession(s.path, renameValue.trim());
     if (ok) {
-      actions.toast("已重命名");
+      actions.toast(t("已重命名"));
       load();
     } else {
-      actions.toast("重命名失败", "bad");
+      actions.toast(t("重命名失败"), "bad");
     }
     setRenaming(null);
     setMenuSession(null);
@@ -68,10 +70,10 @@ export function SessionsView() {
   const handleDelete = async (s) => {
     const ok = await actions.deleteSession(s.path);
     if (ok) {
-      actions.toast("已删除");
+      actions.toast(t("已删除"));
       load();
     } else {
-      actions.toast("删除失败", "bad");
+      actions.toast(t("删除失败"), "bad");
     }
     setDeleting(null);
     setMenuSession(null);
@@ -80,7 +82,7 @@ export function SessionsView() {
   const handlePin = async (s, pinned) => {
     const ok = await actions.pinSession(s.path, pinned);
     if (ok) {
-      actions.toast(pinned ? "已置顶" : "已取消置顶");
+      actions.toast(pinned ? t("已置顶") : t("已取消置顶"));
       load();
     }
     setMenuSession(null);
@@ -131,8 +133,8 @@ export function SessionsView() {
 
   return (
     <PageShell
-      title="聊天记录"
-      desc="历史会话列表。点击打开恢复完整会话。"
+      title={t("聊天记录")}
+      desc={t("历史会话列表。点击打开恢复完整会话。")}
       actions={
         <div className="flex gap-2">
           <select
@@ -140,10 +142,10 @@ export function SessionsView() {
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value)}
           >
-            <option value="mtime">按时间</option>
-            <option value="name">按名称</option>
+            <option value="mtime">{t("按时间")}</option>
+            <option value="name">{t("按名称")}</option>
           </select>
-          <button className="btn btn-ghost" onClick={load} title="刷新">
+          <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
             <IconRefresh size={13} /> 刷新
           </button>
         </div>
@@ -154,14 +156,14 @@ export function SessionsView() {
         <IconSearch size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
         <input
           className="input pl-8 h-8"
-          placeholder="搜索会话…"
+          placeholder={t("搜索会话…")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
       {err && <div className="text-[13px] text-error mb-3">{err}</div>}
-      {!sessions && !err && <div className="text-secondary text-[13px] py-8 text-center">加载中…</div>}
+      {!sessions && !err && <div className="text-secondary text-[13px] py-8 text-center">{t("加载中…")}</div>}
       {sessions && !hasSessions && (
         <div className="text-secondary text-[13px] py-12 text-center flex flex-col items-center gap-2">
           <IconHistory size={24} className="opacity-40" />
@@ -176,7 +178,7 @@ export function SessionsView() {
         return (
           <div key={group.id} className="mb-4">
             <h3 className="text-[11px] uppercase tracking-wider text-secondary/70 font-semibold mb-2 px-1">
-              {group.label} ({items.length})
+              {t(group.label)} ({items.length})
             </h3>
             <div className="space-y-1.5">
               {items.map((s) => (
@@ -209,16 +211,16 @@ export function SessionsView() {
       {deleting && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-fade-in">
           <div className="card p-4 max-w-sm animate-slide-up">
-            <h3 className="font-semibold mb-2">确认删除</h3>
+            <h3 className="font-semibold mb-2">{t("确认删除")}</h3>
             <p className="text-[13px] text-secondary mb-4">
-              删除后无法恢复。确定要删除此会话吗？
+              {t("删除后无法恢复。确定要删除此会话吗？")}
             </p>
             <div className="flex justify-end gap-2">
-              <button className="btn" onClick={() => setDeleting(null)}>取消</button>
+              <button className="btn" onClick={() => setDeleting(null)}>{t("取消")}</button>
               <button className="btn btn-danger" onClick={() => {
                 const s = sessions.find(x => x.path === deleting);
                 if (s) handleDelete(s);
-              }}>删除</button>
+              }}>{t("删除")}</button>
             </div>
           </div>
         </div>
@@ -232,6 +234,7 @@ function SessionItem({
   onOpen, onMenuToggle, onRenameStart, onRenameChange, onRenameSubmit, onRenameCancel,
   onPin, onDelete, onDeleteConfirm, onDeleteCancel
 }) {
+  const { t } = useLang();
   return (
     <div className="card px-3.5 py-3 group relative  transition-colors duration-100">
       <div className="flex items-center gap-3">
@@ -258,14 +261,14 @@ function SessionItem({
           ) : (
             <div className="text-[13.5px] font-medium truncate flex items-center gap-1.5">
               {s.pinned && <IconPin size={12} className="text-accent shrink-0" />}
-              {s.name || "未命名会话"}
+              {s.name || t("未命名会话")}
             </div>
           )}
           <div className="flex items-center gap-2 mt-0.5 text-[11px] text-secondary font-mono">
             <span className="truncate">{s.file ?? s.path.split(/[\\/]/).pop()}</span>
           </div>
           <div className="flex items-center gap-3 mt-1 text-[11px] text-secondary">
-            <span>{s.messageCount ?? 0} 条消息</span>
+            <span>{s.messageCount ?? 0} {t("条消息")}</span>
             <span>{fmtTime(s.mtime)}</span>
             {s.cwd && <span className="truncate max-w-[220px]">{s.cwd}</span>}
           </div>
@@ -278,7 +281,7 @@ function SessionItem({
             onClick={onOpen}
             disabled={switching}
           >
-            {switching ? "切换中…" : "打开"}
+            {switching ? t("切换中…") : t("打开")}
           </button>
           <div className="relative">
             <button className="btn btn-icon h-7 w-7" onClick={onMenuToggle}>
@@ -291,7 +294,7 @@ function SessionItem({
                 </button>
                 <button className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px]" onClick={onPin}>
                   {s.pinned ? <IconPinOff size={12} /> : <IconPin size={12} />}
-                  {s.pinned ? "取消置顶" : "置顶"}
+                  {s.pinned ? t("取消置顶") : t("置顶")}
                 </button>
                 <hr className="border-border my-1" />
                 <button className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px] text-error hover:bg-error/10" onClick={onDelete}>

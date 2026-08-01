@@ -1,6 +1,7 @@
 // Skills 管理页面：显示已发现的 skills，支持查看内容、使用。
 import { useEffect, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import {
   IconRefresh, IconSearch, IconFileText, IconChevronRight,
@@ -8,6 +9,7 @@ import {
 } from "../icons";
 
 export function SkillsView() {
+  const { t } = useLang();
   const { actions } = useApp();
   const [skills, setSkills] = useState(null);
   const [err, setErr] = useState(null);
@@ -35,7 +37,7 @@ export function SkillsView() {
       const content = await actions.getSkillContent(skill.name);
       setSkillContent(content);
     } catch (e) {
-      setSkillContent({ content: `加载失败: ${e}` });
+      setSkillContent({ content: `${t("加载失败: ")}${e}` });
     }
     setLoadingContent(false);
   };
@@ -50,7 +52,7 @@ export function SkillsView() {
     // 填充输入框
     actions.dispatch({ type: "view", view: "chat" });
     window.dispatchEvent(new CustomEvent("omp:fill-prompt", { detail: `/skill:${skill.name} ` }));
-    actions.toast(`已填入: /skill:${skill.name}`);
+    actions.toast(`${t("已填入: ")}/skill:${skill.name}`);
   };
 
   const filtered = (skills ?? []).filter((s) => {
@@ -66,9 +68,9 @@ export function SkillsView() {
   return (
     <PageShell
       title="Skills"
-      desc="已发现的能力包（Skills）。通过 skill:// 协议或 /skill:<name> 命令使用。"
+      desc={t("已发现的能力包（Skills）。通过 skill:// 协议或 /skill:<name> 命令使用。")}
       actions={
-        <button className="btn btn-ghost" onClick={load} title="刷新">
+        <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
           <IconRefresh size={13} /> 刷新
         </button>
       }
@@ -79,16 +81,16 @@ export function SkillsView() {
           <IconSearch size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
           <input
             className="input pl-8 h-8"
-            placeholder="搜索 skills…"
+            placeholder={t("搜索 skills…")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-1">
           {[
-            { id: "all", label: `全部 (${skills?.length ?? 0})` },
-            { id: "user", label: `用户 (${userCount})` },
-            { id: "project", label: `项目 (${projectCount})` },
+            { id: "all", label: `${t("全部")} (${skills?.length ?? 0})` },
+            { id: "user", label: `${t("用户")} (${userCount})` },
+            { id: "project", label: `${t("项目")} (${projectCount})` },
           ].map((f) => (
             <button
               key={f.id}
@@ -102,11 +104,11 @@ export function SkillsView() {
       </div>
 
       {err && <div className="text-[13px] text-error mb-3">{err}</div>}
-      {!skills && !err && <div className="text-secondary text-[13px] py-8 text-center">加载中…</div>}
+      {!skills && !err && <div className="text-secondary text-[13px] py-8 text-center">{t("加载中…")}</div>}
       {skills && !skills.length && (
         <div className="card p-6 text-center">
           <IconZap size={32} className="mx-auto text-secondary/40 mb-3" />
-          <h3 className="text-[14px] font-medium mb-2">暂未发现 Skills</h3>
+          <h3 className="text-[14px] font-medium mb-2">{t("暂未发现 Skills")}</h3>
           <p className="text-[12.5px] text-secondary max-w-md mx-auto leading-relaxed">
             Skills 是基于文件的能力包，放在以下目录即可自动发现：
           </p>
@@ -135,10 +137,10 @@ export function SkillsView() {
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${
                   s.source === "user" ? "bg-accent/15 text-accent" : "bg-success/15 text-success"
                 }`}>
-                  {s.source === "user" ? "用户" : "项目"}
+                  {s.source === "user" ? t("用户") : t("项目")}
                 </span>
                 {s.alwaysApply && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">自动</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">{t("自动")}</span>
                 )}
               </div>
               {s.description && (
@@ -152,7 +154,7 @@ export function SkillsView() {
             </div>
           ))}
           {filtered.length === 0 && skills?.length > 0 && (
-            <div className="text-secondary text-[13px] py-8 text-center">无匹配结果</div>
+            <div className="text-secondary text-[13px] py-8 text-center">{t("无匹配结果")}</div>
           )}
         </div>
 
@@ -167,14 +169,14 @@ export function SkillsView() {
               <div className="flex items-center gap-1">
                 <button
                   className="btn btn-icon h-6 w-6"
-                  title="复制 skill:// 引用"
+                  title={t("复制 skill:// 引用")}
                   onClick={() => copySkillRef(selectedSkill.name)}
                 >
                   {copied === selectedSkill.name ? <IconCheck size={11} className="text-success" /> : <IconCopy size={11} />}
                 </button>
                 <button
                   className="btn btn-icon h-6 w-6"
-                  title="关闭详情"
+                  title={t("关闭详情")}
                   onClick={() => setSelectedSkill(null)}
                 >
                   <IconChevronRight size={11} />
@@ -187,8 +189,8 @@ export function SkillsView() {
               </div>
             )}
             <div className="px-3.5 py-2 border-b border-border flex items-center gap-3 text-[11px]">
-              <span className="text-secondary">来源: <span className="text-primary font-mono">{selectedSkill.source}</span></span>
-              <span className="text-secondary">路径: <span className="text-primary font-mono">{selectedSkill.baseDir}</span></span>
+              <span className="text-secondary">{t("来源: ")}<span className="text-primary font-mono">{selectedSkill.source}</span></span>
+              <span className="text-secondary">{t("路径: ")}<span className="text-primary font-mono">{selectedSkill.baseDir}</span></span>
             </div>
             <div className="flex-1 overflow-y-auto p-3.5">
               {loadingContent && <div className="text-secondary text-[13px] py-4 text-center">加载中…</div>}
@@ -201,7 +203,7 @@ export function SkillsView() {
                 className="btn btn-primary h-8 w-full"
                 onClick={() => useSkill(selectedSkill)}
               >
-                <IconZap size={13} /> 使用此 Skill
+                <IconZap size={13} /> {t("使用此 Skill")}
               </button>
             </div>
           </div>
@@ -210,7 +212,7 @@ export function SkillsView() {
 
       {/* 说明 */}
       <div className="card p-4 mt-4">
-        <h3 className="text-[12.5px] font-medium mb-2">关于 Skills</h3>
+        <h3 className="text-[12.5px] font-medium mb-2">{t("关于 Skills")}</h3>
         <ul className="text-[12px] text-secondary space-y-1.5 list-disc pl-4">
           <li>Skills 是基于文件的能力包，每个 skill 包含一个 SKILL.md 文件</li>
           <li>在聊天中输入 <span className="font-mono text-accent">/skill:&lt;name&gt;</span> 调用 skill</li>

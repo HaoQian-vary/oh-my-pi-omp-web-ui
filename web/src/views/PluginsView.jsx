@@ -1,6 +1,7 @@
 // 插件（Extensions）管理：列出已安装插件、启用/禁用、卸载，展示扩展模块。
 import { useEffect, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import {
   IconPuzzle, IconRefresh, IconTrash, IconExternalLink,
@@ -8,6 +9,7 @@ import {
 } from "../icons";
 
 export function PluginsView() {
+  const { t } = useLang();
   const { actions } = useApp();
   const [plugins, setPlugins] = useState(null);
   const [err, setErr] = useState(null);
@@ -35,13 +37,13 @@ export function PluginsView() {
     try {
       const ok = await actions.pluginSetEnabled(p.key, !p.enabled);
       if (ok) {
-        actions.toast(p.enabled ? `已禁用: ${p.name}` : `已启用: ${p.name}`);
+        actions.toast(p.enabled ? `${t("已禁用: ")}${p.name}` : `${t("已启用: ")}${p.name}`);
         load();
       } else {
-        actions.toast("操作失败", "bad");
+        actions.toast(t("操作失败"), "bad");
       }
     } catch (e) {
-      actions.toast(`操作失败: ${e.message ?? e}`, "bad");
+      actions.toast(`${t("操作失败")}: ${e.message ?? e}`, "bad");
     } finally {
       setBusy(null);
     }
@@ -53,10 +55,10 @@ export function PluginsView() {
     try {
       const ok = await actions.uninstallPlugin(p.name, p.marketplace);
       if (ok) {
-        actions.toast(`已卸载: ${p.name}`);
+        actions.toast(`${t("已卸载: ")}${p.name}`);
         load();
       } else {
-        actions.toast("卸载失败", "bad");
+        actions.toast(t("卸载失败"), "bad");
       }
     } catch (e) {
       actions.toast(`卸载失败: ${e.message ?? e}`, "bad");
@@ -68,7 +70,7 @@ export function PluginsView() {
   return (
     <PageShell
       title="插件"
-      desc="管理已安装的插件与扩展模块。插件从 Marketplace 安装，扩展模块是自定义代码（工具/命令/事件钩子）。"
+      desc={t("管理已安装的插件与扩展模块。插件从 Marketplace 安装，扩展模块是自定义代码（工具/命令/事件钩子）。")}
       actions={
         <div className="flex gap-2">
           <button
@@ -78,7 +80,7 @@ export function PluginsView() {
           >
             <IconWrench size={13} /> 扩展模块 {extensions.length > 0 ? `(${extensions.length})` : ""}
           </button>
-          <button className="btn btn-ghost" onClick={load} title="刷新">
+          <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
             <IconRefresh size={13} /> 刷新
           </button>
         </div>
@@ -89,11 +91,11 @@ export function PluginsView() {
         <div className="card p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <IconWrench size={14} className="text-accent" />
-            <span className="text-[13px] font-medium">本地扩展模块</span>
+            <span className="text-[13px] font-medium">{t("本地扩展模块")}</span>
           </div>
           {extensions.length === 0 && (
             <p className="text-[12px] text-secondary">
-              暂无自定义扩展模块。在 <span className="font-mono">~/.omp/agent/extensions/</span>（用户级）或
+              {t("暂无自定义扩展模块。在")} <span className="font-mono">~/.omp/agent/extensions/</span>（{t("用户级")}）{t("或")}
               <span className="font-mono"> .omp/extensions/</span>（项目级）放置 <span className="font-mono">.ts</span> / <span className="font-mono">.js</span> 文件即可。
             </p>
           )}
@@ -111,13 +113,13 @@ export function PluginsView() {
       )}
 
       {err && <div className="text-[13px] text-error mb-3">{err}</div>}
-      {!plugins && !err && <div className="text-secondary text-[13px] py-8 text-center">加载中…</div>}
+      {!plugins && !err && <div className="text-secondary text-[13px] py-8 text-center">{t("加载中…")}</div>}
       {plugins && plugins.length === 0 && (
         <div className="card p-8 text-center">
           <IconPuzzle size={40} className="mx-auto text-secondary/30 mb-3" />
-          <h3 className="text-[14px] font-medium mb-2">暂无已安装插件</h3>
+          <h3 className="text-[14px] font-medium mb-2">{t("暂无已安装插件")}</h3>
           <p className="text-[12.5px] text-secondary">
-            去 <span className="text-accent">Marketplace</span> 页搜索并安装插件。
+            {t("去 ")}<span className="text-accent">Marketplace</span>{t("页搜索并安装插件。")}
           </p>
         </div>
       )}
@@ -137,7 +139,7 @@ export function PluginsView() {
                   </span>
                   {p.version && <span className="text-[10px] text-secondary font-mono">{p.version}</span>}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded ${p.enabled ? "text-success" : "text-error"}`} style={{ background: p.enabled ? 'var(--color-success)22' : 'var(--color-error)22' }}>
-                    {p.enabled ? "已启用" : "已禁用"}
+                    {p.enabled ? t("已启用") : t("已禁用")}
                   </span>
                 </div>
                 {p.description && <p className="text-[12px] text-secondary mt-1 leading-relaxed">{p.description}</p>}
@@ -168,7 +170,7 @@ export function PluginsView() {
                       <IconExternalLink size={10} /> 主页
                     </a>
                   )}
-                  <span>范围: {p.scope}</span>
+                  <span>{t("范围: ")}{p.scope}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -177,15 +179,15 @@ export function PluginsView() {
                   className={`btn h-7 ${p.enabled ? "btn-ghost" : "btn-primary"}`}
                   onClick={() => toggle(p)}
                   disabled={busy === `toggle-${p.key}`}
-                  title={p.enabled ? "禁用此插件" : "启用此插件"}
+                  title={p.enabled ? t("禁用") : t("启用")}
                 >
-                  {busy === `toggle-${p.key}` ? "…" : p.enabled ? "禁用" : "启用"}
+                  {busy === `toggle-${p.key}` ? "…" : p.enabled ? t("禁用") : t("启用")}
                 </button>
                 <button
                   className="btn btn-icon h-7 w-7"
                   onClick={() => uninstall(p)}
                   disabled={busy === `uninstall-${p.key}`}
-                  title="卸载插件"
+                  title={t("卸载插件")}
                 >
                   <IconTrash size={13} />
                 </button>
@@ -197,7 +199,7 @@ export function PluginsView() {
 
       {/* 说明 */}
       <div className="card p-4 mt-4">
-        <h3 className="text-[12.5px] font-medium mb-2">什么是插件 vs 扩展模块</h3>
+        <h3 className="text-[12.5px] font-medium mb-2">{t("什么是插件 vs 扩展模块")}</h3>
         <ul className="text-[12px] text-secondary space-y-1.5 list-disc pl-4">
           <li><strong className="text-primary">插件（Plugin）</strong>：从 Marketplace 安装的能力包，可包含 skills / agents / commands / MCP servers / 扩展代码</li>
           <li><strong className="text-primary">扩展模块（Extension）</strong>：单独的 <span className="font-mono">.ts/.js</span> 代码文件，可注册自定义工具、斜杠命令、事件钩子（如安全拦截）</li>

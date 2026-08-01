@@ -1,7 +1,8 @@
-// 外观设置页面
+// 外观设置页面：主题切换 + 界面语言切换。
 import { useTheme } from "../ThemeProvider";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
-import { IconCheck, IconSun, IconMoon, IconMonitor } from "../icons";
+import { IconCheck, IconSun, IconMoon, IconMonitor, IconGlobe } from "../icons";
 
 const THEME_ICONS = {
   dark: IconMoon,
@@ -14,27 +15,61 @@ const THEME_ICONS = {
 
 export function AppearanceView() {
   const { theme, themes, setTheme } = useTheme();
+  const { lang, setLang, t } = useLang();
 
   return (
     <PageShell
-      title="外观设置"
-      desc="自定义界面主题和视觉风格。切换主题后立即生效。"
+      title={t("外观设置")}
+      desc={t("自定义界面主题和视觉风格。切换主题后立即生效。")}
     >
       <div className="space-y-6">
+        {/* 语言切换 */}
+        <div>
+          <h2 className="text-[13.5px] font-semibold mb-3">{t("界面语言")}</h2>
+          <div className="flex gap-3">
+            {[
+              { id: "zh", label: "中文", sub: "简体中文" },
+              { id: "en", label: "English", sub: "English" },
+            ].map((l) => (
+              <button
+                key={l.id}
+                className={`card px-4 py-3 flex items-center gap-3 transition-all duration-150 ${
+                  lang === l.id ? "border-accent ring-1 ring-accent" : ""
+                }`}
+                onClick={() => setLang(l.id)}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${lang === l.id ? "bg-accent text-white" : "text-secondary"}`} style={lang !== l.id ? { background: 'var(--color-bg-elevated)' } : undefined}>
+                  <IconGlobe size={16} />
+                </div>
+                <div className="text-left">
+                  <div className="text-[13.5px] font-medium">{l.label}</div>
+                  <div className="text-[11.5px] text-secondary">{l.sub}</div>
+                </div>
+                {lang === l.id && (
+                  <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center">
+                    <IconCheck size={12} className="text-white" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11.5px] text-secondary mt-2">{t("语言设置会保存在浏览器本地存储中")}</p>
+        </div>
+
         {/* 主题选择 */}
         <div>
-          <h2 className="text-[13.5px] font-semibold mb-3">主题</h2>
+          <h2 className="text-[13.5px] font-semibold mb-3">{t("主题")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {themes.map((t) => {
-              const Icon = THEME_ICONS[t.id] || IconMoon;
-              const isActive = theme === t.id;
+            {themes.map((tm) => {
+              const Icon = THEME_ICONS[tm.id] || IconMoon;
+              const isActive = theme === tm.id;
               return (
                 <button
-                  key={t.id}
-                  className={`card p-4 text-left  transition-all duration-150 ${
+                  key={tm.id}
+                  className={`card p-4 text-left transition-all duration-150 ${
                     isActive ? "border-accent ring-1 ring-accent" : ""
                   }`}
-                  onClick={() => setTheme(t.id)}
+                  onClick={() => setTheme(tm.id)}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -43,8 +78,8 @@ export function AppearanceView() {
                       <Icon size={16} />
                     </div>
                     <div className="flex-1">
-                      <div className="text-[13.5px] font-medium">{t.label}</div>
-                      <div className="text-[11.5px] text-secondary">{t.desc}</div>
+                      <div className="text-[13.5px] font-medium">{t(tm.label)}</div>
+                      <div className="text-[11.5px] text-secondary">{t(tm.desc)}</div>
                     </div>
                     {isActive && (
                       <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center">
@@ -53,7 +88,7 @@ export function AppearanceView() {
                     )}
                   </div>
                   {/* 主题预览 */}
-                  <ThemePreview themeId={t.id} />
+                  <ThemePreview themeId={tm.id} />
                 </button>
               );
             })}
@@ -62,12 +97,12 @@ export function AppearanceView() {
 
         {/* 说明 */}
         <div className="card p-4">
-          <h3 className="text-[12.5px] font-medium mb-2">关于主题</h3>
+          <h3 className="text-[12.5px] font-medium mb-2">{t("关于主题")}</h3>
           <ul className="text-[12px] text-secondary space-y-1.5 list-disc pl-4">
-            <li>主题切换立即生效，无需刷新页面</li>
-            <li>选择 "System" 会自动跟随系统暗色/亮色设置</li>
-            <li>主题设置会保存在浏览器本地存储中</li>
-            <li>主题覆盖所有界面元素：侧边栏、消息区、Inspector、终端、代码块、Diff 视图等</li>
+            <li>{t("主题切换立即生效，无需刷新页面")}</li>
+            <li>{t("选择 \"System\" 会自动跟随系统暗色/亮色设置")}</li>
+            <li>{t("主题设置会保存在浏览器本地存储中")}</li>
+            <li>{t("主题覆盖所有界面元素：侧边栏、消息区、Inspector、终端、代码块、Diff 视图等")}</li>
           </ul>
         </div>
       </div>

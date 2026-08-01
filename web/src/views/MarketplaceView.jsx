@@ -1,6 +1,7 @@
 // Marketplace 页面：直接搜索可用插件（跨所有已添加市场），一键安装/卸载。
 import { useEffect, useState, useMemo } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import {
   IconRefresh, IconSearch, IconPlug, IconCheck, IconTrash,
@@ -8,6 +9,7 @@ import {
 } from "../icons";
 
 export function MarketplaceView() {
+  const { t } = useLang();
   const { actions } = useApp();
   const [marketplaces, setMarketplaces] = useState([]);
   const [installed, setInstalled] = useState({});
@@ -55,10 +57,10 @@ export function MarketplaceView() {
     try {
       const ok = await actions.installPlugin(p.name, p.marketplace);
       if (ok) {
-        actions.toast(`已安装: ${p.name}`);
+        actions.toast(`${t("已安装: ")}${p.name}`);
         await loadMeta();
       } else {
-        actions.toast("安装失败", "bad");
+        actions.toast(t("安装失败"), "bad");
       }
     } catch (e) {
       actions.toast(`安装失败: ${e.message ?? e}`, "bad");
@@ -72,10 +74,10 @@ export function MarketplaceView() {
     try {
       const ok = await actions.uninstallPlugin(p.name, p.marketplace);
       if (ok) {
-        actions.toast(`已卸载: ${p.name}`);
+        actions.toast(`${t("已卸载: ")}${p.name}`);
         await loadMeta();
       } else {
-        actions.toast("卸载失败", "bad");
+        actions.toast(t("卸载失败"), "bad");
       }
     } catch (e) {
       actions.toast(`卸载失败: ${e.message ?? e}`, "bad");
@@ -94,12 +96,12 @@ export function MarketplaceView() {
         body: JSON.stringify({ source: addSource.trim() }),
       }).then((r) => r.json()).then((j) => {
         if (j.ok) {
-          actions.toast("已添加市场源");
+          actions.toast(t("已添加市场源"));
           setAddSource("");
           setAddOpen(false);
           loadMeta().then(() => doSearch(""));
         } else {
-          actions.toast(`添加失败: ${j.error ?? ""}`, "bad");
+          actions.toast(`${t("添加失败: ")}${j.error ?? ""}`, "bad");
         }
       });
     } finally {
@@ -114,13 +116,13 @@ export function MarketplaceView() {
   return (
     <PageShell
       title="Marketplace"
-      desc="搜索并安装插件（Skills、Commands、Agents、MCP 等能力）。"
+      desc={t("搜索并安装插件（Skills、Commands、Agents、MCP 等能力）。")}
       actions={
         <div className="flex gap-2">
-          <button className="btn btn-ghost" onClick={() => doSearch()} title="刷新">
+          <button className="btn btn-ghost" onClick={() => doSearch()} title={t("刷新")}>
             <IconRefresh size={13} /> 刷新
           </button>
-          <button className="btn" onClick={() => setAddOpen(true)} title="添加市场源">
+          <button className="btn" onClick={() => setAddOpen(true)} title={t("添加市场源")}>
             <IconPlug size={13} /> 添加源
           </button>
         </div>
@@ -132,22 +134,22 @@ export function MarketplaceView() {
           <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
           <input
             className="input pl-9 h-9 text-[13px]"
-            placeholder="搜索插件，如 pdf、database、security、browser…"
+            placeholder={t("搜索插件，如 pdf、database、security、browser…")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") doSearch(); }}
           />
         </div>
         <button className="btn btn-primary h-9 px-4" onClick={() => doSearch()} disabled={loading}>
-          {loading ? "搜索中…" : "搜索"}
+          {loading ? t("搜索中…") : t("搜索")}
         </button>
       </div>
 
       {/* 市场源状态 */}
       <div className="flex items-center gap-2 mb-4 text-[12px] flex-wrap">
-        <span style={{ color: 'var(--color-text-secondary)' }}>市场源:</span>
+        <span style={{ color: 'var(--color-text-secondary)' }}>{t("市场源:")}</span>
         {marketplaces.length === 0 ? (
-          <span className="text-secondary">未添加任何市场源，点击「添加源」添加（如 anthropics/claude-plugins-official）</span>
+          <span className="text-secondary">{t("未添加任何市场源，点击「添加源」添加（如 anthropics/claude-plugins-official）")}</span>
         ) : (
           marketplaces.map((m) => (
             <span key={m.name} className="px-2 py-0.5 rounded-full border text-[11.5px]" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
@@ -157,20 +159,20 @@ export function MarketplaceView() {
         )}
         {Object.keys(installed).length > 0 && (
           <span className="px-2 py-0.5 rounded-full border text-[11.5px]" style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)' }}>
-            已安装 {Object.keys(installed).length} 个
+            {t("已安装 ")}{Object.keys(installed).length}{t("个")}
           </span>
         )}
       </div>
 
       {err && <div className="text-[13px] text-error mb-3">{err}</div>}
-      {loading && <div className="text-secondary text-[13px] py-8 text-center">加载中…</div>}
+      {loading && <div className="text-secondary text-[13px] py-8 text-center">{t("加载中…")}</div>}
 
       {!loading && (
         <>
           {searched && results.length === 0 && (
             <div className="card p-8 text-center">
               <IconPlug size={40} className="mx-auto text-secondary/30 mb-3" />
-              <h3 className="text-[14px] font-medium mb-2">未找到匹配插件</h3>
+              <h3 className="text-[14px] font-medium mb-2">{t("未找到匹配插件")}</h3>
               <p className="text-[12.5px] text-secondary max-w-md mx-auto">
                 {marketplaces.length === 0
                   ? "先添加市场源，然后搜索。常用市场：anthropics/claude-plugins-official（官方插件市场）"
@@ -220,7 +222,7 @@ export function MarketplaceView() {
                         disabled={busy === `uninstall-${p.name}`}
                         onClick={() => uninstall(p)}
                       >
-                        {busy === `uninstall-${p.name}` ? "卸载中…" : "卸载"}
+                        {busy === `uninstall-${p.name}` ? t("卸载中…") : t("卸载")}
                       </button>
                     ) : (
                       <button
@@ -228,7 +230,7 @@ export function MarketplaceView() {
                         disabled={busy === `install-${p.name}`}
                         onClick={() => install(p)}
                       >
-                        {busy === `install-${p.name}` ? "安装中…" : "安装"}
+                        {busy === `install-${p.name}` ? t("安装中…") : t("安装")}
                       </button>
                     )}
                   </div>
@@ -244,11 +246,11 @@ export function MarketplaceView() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-fade-in">
           <div className="w-[460px] max-w-[92vw] card shadow-2xl animate-slide-up" style={{ background: 'var(--color-card)' }}>
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-              <h3 className="text-[14px] font-semibold">添加市场源</h3>
+              <h3 className="text-[14px] font-semibold">{t("添加市场源")}</h3>
               <button className="btn btn-icon" onClick={() => setAddOpen(false)}><IconX size={13} /></button>
             </div>
             <div className="px-4 py-4">
-              <label className="text-[12.5px] text-secondary block mb-1.5">市场源地址</label>
+              <label className="text-[12.5px] text-secondary block mb-1.5">{t("市场源地址")}</label>
               <input
                 className="input h-8"
                 placeholder="如 anthropics/claude-plugins-official 或 https://github.com/org/repo"
@@ -264,7 +266,7 @@ export function MarketplaceView() {
             <div className="flex justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
               <button className="btn" onClick={() => setAddOpen(false)}>取消</button>
               <button className="btn btn-primary" onClick={addMarketplace} disabled={addingSource || !addSource.trim()}>
-                {addingSource ? "添加中…" : "添加"}
+                {addingSource ? t("添加中…") : t("添加")}
               </button>
             </div>
           </div>
