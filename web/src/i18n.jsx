@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 
 // 翻译字典：key 为中文（源码用中文直接写），value 为英文
 const DICT = {
+  "文件夹选择超时，请重试": "Folder picker timed out, please retry",
+  "选择中…": "Selecting…",
   "Token 速率": "Token Rate",
   "创建 Markdown 文件：": "create a Markdown file:",
   "在": "In",

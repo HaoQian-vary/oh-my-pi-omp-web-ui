@@ -1,9 +1,9 @@
-// 新建对话弹窗组件：名称（可选）+ 工作文件夹（可选，带目录浏览选择器）。
-import { useEffect, useState } from "react";
+// 新建对话弹窗组件：名称（可选）+ 工作文件夹（可选，系统原生文件夹选择器）。
+import { useState } from "react";
 import { useApp } from "../store";
 import { useLang } from "../i18n";
 import { api } from "../api";
-import { IconFolder, IconX, IconChevronRight, IconRefresh } from "../icons";
+import { IconFolder, IconX } from "../icons";
 
 export function NewSessionDialog({ onClose, onCreated }) {
   const { state, actions } = useApp();
@@ -11,7 +11,26 @@ export function NewSessionDialog({ onClose, onCreated }) {
   const [name, setName] = useState("");
   const [cwd, setCwd] = useState("");
   const [loading, setLoading] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [picking, setPicking] = useState(false);
+
+  // 调系统原生文件夹选择对话框（文件管理器风格，可新建文件夹）
+  // 120s 超时兜底：若对话框进程异常挂起，恢复按钮并提示，避免永久“选择中…”
+  const handleBrowse = async () => {
+    setPicking(true);
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 120000);
+    try {
+      const r = await api.pickFolder(cwd || undefined, ac.signal);
+      if (r?.ok && r.dir) setCwd(r.dir);
+      else if (r && !r.ok) actions.toast(String(r.error ?? t("加载失败")), "bad");
+    } catch (e) {
+      if (e?.name === "AbortError") actions.toast(t("文件夹选择超时，请重试"), "bad");
+      else actions.toast(String(e), "bad");
+    } finally {
+      clearTimeout(timer);
+      setPicking(false);
+    }
+  };
 
   const handleCreate = async () => {
     setLoading(true);
@@ -80,8 +99,8 @@ export function NewSessionDialog({ onClose, onCreated }) {
                 />
                 <IconFolder size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary" />
               </div>
-              <button className="btn h-8" onClick={() => setPickerOpen(true)} title={t("浏览选择文件夹")}>
-                <IconFolder size={13} /> {t("浏览")}
+              <button className="btn h-8" onClick={handleBrowse} disabled={picking} title={t("浏览选择文件夹")}>
+                <IconFolder size={13} /> {picking ? t("选择中…") : t("浏览")}
               </button>
               {cwd && (
                 <button className="btn btn-ghost h-8" onClick={() => setCwd("")} title={t("清除")}>
@@ -101,107 +120,6 @@ export function NewSessionDialog({ onClose, onCreated }) {
           <button className="btn btn-primary" onClick={handleCreate} disabled={loading}>
             {loading ? t("创建中…") : t("创建对话")}
           </button>
-        </div>
-
-        {/* 文件夹选择弹窗 */}
-        {pickerOpen && (
-          <DirPicker
-            onSelect={(path) => { setCwd(path); setPickerOpen(false); }}
-            onClose={() => setPickerOpen(false)}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// 目录浏览选择器
-function DirPicker({ onSelect, onClose }) {
-  const { t } = useLang();
-  const [path, setPath] = useState(null); // null = 盘符列表
-  const [dirs, setDirs] = useState([]);
-  const [parent, setParent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
-
-  const load = async (p) => {
-    setLoading(true);
-    setErr(null);
-    try {
-      const r = await api.listDirs(p);
-      if (r?.ok) {
-        setDirs(r.dirs ?? []);
-        setParent(r.parent ?? null);
-        setPath(p);
-      } else {
-        setErr(r?.error ?? t("加载失败"));
-      }
-    } catch (e) {
-      setErr(String(e));
-    }
-    setLoading(false);
-  };
-
-  // 初始加载盘符
-  useEffect(() => { load(null); }, []);
-
-  const goUp = () => {
-    if (path === null) return;
-    load(parent);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 animate-fade-in">
-      <div className="w-[480px] max-w-[92vw] card shadow-2xl animate-slide-up flex flex-col" style={{ background: 'var(--color-card)' }}>
-        <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-          <IconFolder size={14} className="text-accent shrink-0" />
-          <span className="flex-1 text-[13.5px] font-semibold truncate">{path ?? t("选择磁盘")}</span>
-          {parent && (
-            <button className="btn btn-ghost h-7 text-[12px]" onClick={goUp} title={t("上一级")}>
-              <IconChevronRight size={12} className="rotate-180" /> {t("上一级")}
-            </button>
-          )}
-          <button className="btn btn-icon" onClick={() => load(path)} title={t("刷新")}>
-            <IconRefresh size={13} />
-          </button>
-          <button className="btn btn-icon" onClick={onClose}>
-            <IconX size={13} />
-          </button>
-        </div>
-
-        {err && <div className="px-4 py-2 text-[12px] text-error">{err}</div>}
-        {loading && <div className="px-4 py-6 text-[12.5px] text-secondary text-center">加载中…</div>}
-
-        {!loading && (
-          <div className="flex-1 overflow-y-auto p-2 max-h-[360px]">
-            {dirs.length === 0 && (
-              <div className="py-6 text-center text-[12px] text-secondary">{t("此文件夹下没有子目录")}</div>
-            )}
-            {dirs.map((d) => (
-              <div
-                key={d.path}
-                className="flex items-center gap-2 px-2.5 py-2 rounded-md cursor-pointer transition-colors duration-100"
-                style={{ color: 'var(--color-text-primary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-elevated)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                onClick={() => load(d.path)}
-                title={d.path}
-              >
-                <IconFolder size={14} className="text-accent shrink-0" />
-                <span className="flex-1 truncate text-[13px]">{d.name}</span>
-                <IconChevronRight size={11} className="shrink-0" style={{ color: 'var(--color-text-secondary)' }} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
-          <button className="btn" onClick={onClose}>{t("取消")}</button>
-          {path && (
-            <button className="btn btn-primary" onClick={() => onSelect(path)}>
-              {t("选择此文件夹")}
-            </button>
-          )}
         </div>
       </div>
     </div>

@@ -105,6 +105,13 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: path ?? null }),
     }),
+  pickFolder: (start, signal) =>
+    jfetch("/api/pick_folder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ start: start ?? null }),
+      signal,
+    }),
   getMessages: (path) =>
     jfetch("/api/get_messages", {
       method: "POST",

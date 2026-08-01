@@ -9,10 +9,10 @@
 
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join, normalize, sep } from "node:path";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import readline from "node:readline";
 
@@ -600,50 +600,103 @@ async function pinSession(path, pinned) {
   await writeFile(path, newLines.join("\n"), "utf8");
 }
 
-// 目录浏览：列出指定目录的子目录（供文件夹选择器用）
-// start 为 null 时返回盘符列表（Windows）
-async function listDirectories(start) {
-  if (!start) {
-    // Windows: 列出盘符
-    const out = [];
-    for (let c = 65; c <= 90; c++) {
-      const drive = `${String.fromCharCode(c)}:/`;
-      try {
-        await stat(drive);
-        out.push({ path: drive, name: drive });
-      } catch {
-        /* 跳过不存在的盘符 */
+// 原生文件夹选择对话框（Windows）：编译一个无窗口 C# 工具（winexe + STAThread）
+// 并运行它弹出系统文件夹选择对话框（文件管理器风格、可新建文件夹）。
+// 返回选中路径（取消/失败返回 null，失败也可能是 { error }）。
+// 路径经 base64 输出，避免编码问题（中文路径无损）。
+// 为什么不用 PowerShell：-WindowStyle Hidden / CREATE_NO_WINDOW 会把隐藏状态
+// 继承给对话框窗口，导致对话框不可见而进程挂起（“选择中…”卡住）。
+// 测试模式：设置 OMP_PICK_FOLDER_TEST 时直接返回该值（headless 验证用）。
+const PICKER_CACHE = join(tmpdir(), "omp-web-picker");
+const PICKER_EXE = join(PICKER_CACHE, "picker.exe");
+const PICKER_CS = join(PICKER_CACHE, "picker.cs");
+const PICKER_SRC = `using System;
+using System.IO;
+using System.Text;
+using System.Windows.Forms;
+
+static class Picker {
+  [STAThread]
+  static void Main(string[] args) {
+    try {
+      var d = new FolderBrowserDialog {
+        Description = "选择工作文件夹",
+        ShowNewFolderButton = true
+      };
+      if (args.Length > 0 && Directory.Exists(args[0])) d.SelectedPath = args[0];
+      // 透明置顶 owner：无窗口程序弹对话框时 Windows 前台锁定会阻止新窗口抢前台
+      // （对话框被浏览器等活动窗口压在下面）。TopMost owner 让对话框继承置顶样式，
+      // 保证永远显示在最上层。
+      using (var f = new Form {
+        ShowInTaskbar = false,
+        Opacity = 0,
+        TopMost = true,
+        FormBorderStyle = FormBorderStyle.None,
+        StartPosition = FormStartPosition.CenterScreen
+      }) {
+        f.Show();
+        f.Activate();
+        if (d.ShowDialog(f) == DialogResult.OK) {
+          Console.Write(Convert.ToBase64String(Encoding.UTF8.GetBytes(d.SelectedPath)));
+        }
       }
+    } catch (Exception ex) {
+      Console.Error.Write("ERROR: " + ex.Message);
+      Environment.Exit(1);
     }
-    return { parent: null, dirs: out };
   }
+}
+`;
 
-  const out = [];
-  let entries;
-  try {
-    entries = await readdir(start, { withFileTypes: true });
-  } catch {
-    return { parent: null, dirs: [] };
-  }
-  for (const e of entries) {
-    if (!e.isDirectory()) continue;
-    if (e.name.startsWith(".") || e.name === "node_modules" || e.name === "$Recycle.Bin" || e.name === "System Volume Information") continue;
-    const p = join(start, e.name);
-    out.push({ path: p, name: e.name });
-  }
-  out.sort((a, b) => a.name.localeCompare(b.name));
+// 首次调用时用 csc（.NET Framework，Win10/11 自带）编译 picker.exe，之后缓存复用
+async function ensurePickerExe() {
+  if (existsSync(PICKER_EXE)) return PICKER_EXE;
+  await mkdir(PICKER_CACHE, { recursive: true });
+  await writeFile(PICKER_CS, PICKER_SRC, "utf8");
+  const candidates = [
+    join(process.env.WINDIR ?? "C:\\Windows", "Microsoft.NET", "Framework64", "v4.0.30319", "csc.exe"),
+    join(process.env.WINDIR ?? "C:\\Windows", "Microsoft.NET", "Framework", "v4.0.30319", "csc.exe"),
+  ];
+  const csc = candidates.find((c) => existsSync(c));
+  if (!csc) throw new Error("未找到 csc.exe（.NET Framework 编译器）");
+  await new Promise((resolve, reject) => {
+    const p = spawn(csc, ["/nologo", "/target:winexe", `/out:${PICKER_EXE}`, PICKER_CS], { windowsHide: true });
+    let err = "";
+    p.stderr.on("data", (d) => (err += d));
+    p.on("error", reject);
+    p.on("close", (c) => (c === 0 ? resolve() : reject(new Error(`csc 编译失败 (exit ${c}): ${err}`))));
+  });
+  return PICKER_EXE;
+}
 
-  // 父目录
-  let parent = null;
-  try {
-    const parentDir = start.replace(/[\\/]+$/, "").split(/[\\/]/).slice(0, -1).join("/");
-    if (parentDir && parentDir !== start.replace(/[\\/]+$/, "")) {
-      parent = parentDir.length >= 2 ? parentDir : null;
+function pickFolder(start = "") {
+  if (process.env.OMP_PICK_FOLDER_TEST) return Promise.resolve(process.env.OMP_PICK_FOLDER_TEST);
+  return (async () => {
+    try {
+      const exe = await ensurePickerExe();
+      return await new Promise((resolve) => {
+        const p = spawn(exe, start ? [start] : [], {});
+        let out = "";
+        p.stdout.on("data", (d) => (out += d));
+        p.stderr.on("data", (d) => (out += d));
+        // 对话框长时间无人操作时兜底：10 分钟后关闭并视为取消
+        const timer = setTimeout(() => {
+          try { p.kill(); } catch { /* 已退出 */ }
+          resolve(null);
+        }, 10 * 60 * 1000);
+        p.on("error", (e) => { clearTimeout(timer); resolve({ error: String(e) }); });
+        p.on("close", (code) => {
+          clearTimeout(timer);
+          const s = out.trim();
+          if (code !== 0) return resolve({ error: s || `picker 退出码 ${code}` });
+          if (!s) return resolve(null);
+          try { resolve(Buffer.from(s, "base64").toString("utf8")); } catch { resolve(null); }
+        });
+      });
+    } catch (e) {
+      return { error: String(e) };
     }
-  } catch {
-    parent = null;
-  }
-  return { parent, dirs: out };
+  })();
 }
 
 // 退出登录：从本地 agent.db 删除指定 provider 的凭据（API key）
@@ -1176,11 +1229,11 @@ async function handleApi(pathname, req, res) {
         return fail(e);
       }
     }
-    case "/api/list_dirs": {
-      const start = body?.path ? String(body.path) : null;
+    case "/api/pick_folder": {
       try {
-        const { parent, dirs } = await listDirectories(start);
-        return json(res, 200, { ok: true, dirs, parent });
+        const dir = await pickFolder(body?.start ? String(body.start) : "");
+        if (dir && typeof dir === "object" && dir.error) return json(res, 500, { ok: false, error: dir.error });
+        return json(res, 200, { ok: true, dir });
       } catch (e) {
         return fail(e);
       }
