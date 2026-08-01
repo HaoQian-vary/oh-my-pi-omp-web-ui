@@ -113,6 +113,7 @@ export function AppearanceView() {
 function ThemePreview({ themeId }) {
   // 主题预览色块
   const colors = {
+    dim: { bg: "#1e1e2e", sidebar: "#232334", accent: "#89b4fa", text: "#cdd6f4" },
     dark: { bg: "#0D1117", sidebar: "#161B22", accent: "#2F81F7", text: "#E6EDF3" },
     light: { bg: "#ffffff", sidebar: "#f6f8fa", accent: "#0969da", text: "#1f2328" },
     system: { bg: "linear-gradient(135deg, #0D1117 50%, #ffffff 50%)", sidebar: "linear-gradient(135deg, #161B22 50%, #f6f8fa 50%)", accent: "#2F81F7", text: "#E6EDF3" },

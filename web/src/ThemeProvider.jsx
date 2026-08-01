@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 const THEMES = [
+  { id: "dim", label: "Dim", desc: "柔和深色 · 冷调护眼" },
   { id: "dark", label: "Dark", desc: "黑色背景 + 白色文字" },
   { id: "light", label: "Light", desc: "白色背景 + 黑色文字" },
   { id: "system", label: "System", desc: "跟随系统设置" },
@@ -19,9 +20,9 @@ export function useTheme() {
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
     try {
-      return localStorage.getItem("omp-theme") || "dark";
+      return localStorage.getItem("omp-theme") || "dim";
     } catch {
-      return "dark";
+      return "dim";
     }
   });
 
@@ -57,7 +58,7 @@ export function ThemeProvider({ children }) {
     theme,
     themes: THEMES,
     setTheme,
-    isDark: theme === "dark" || theme === "midnight" || theme === "github-dark" ||
+    isDark: theme === "dim" || theme === "dark" || theme === "midnight" || theme === "github-dark" ||
       (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches),
   };
 

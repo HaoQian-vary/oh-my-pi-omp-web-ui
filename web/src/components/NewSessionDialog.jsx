@@ -27,7 +27,7 @@ export function NewSessionDialog({ onClose, onCreated }) {
         onCreated?.(r);
         onClose?.();
       } else {
-        actions.toast(`创建失败: ${r?.error ?? "未知错误"}`, "bad");
+        actions.toast(`${t("创建失败: ")}${r?.error ?? "未知错误"}`, "bad");
       }
     } finally {
       setLoading(false);
@@ -73,18 +73,18 @@ export function NewSessionDialog({ onClose, onCreated }) {
               <div className="relative flex-1">
                 <input
                   className="input h-8 pl-8"
-                  placeholder={defaultDir || "默认工作区"}
+                  placeholder={defaultDir || t("默认工作区")}
                   value={cwd}
                   onChange={(e) => setCwd(e.target.value)}
                   readOnly={!cwd}
                 />
                 <IconFolder size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary" />
               </div>
-              <button className="btn h-8" onClick={() => setPickerOpen(true)} title="浏览选择文件夹">
-                <IconFolder size={13} /> 浏览
+              <button className="btn h-8" onClick={() => setPickerOpen(true)} title={t("浏览选择文件夹")}>
+                <IconFolder size={13} /> {t("浏览")}
               </button>
               {cwd && (
-                <button className="btn btn-ghost h-8" onClick={() => setCwd("")} title="清除">
+                <button className="btn btn-ghost h-8" onClick={() => setCwd("")} title={t("清除")}>
                   <IconX size={13} />
                 </button>
               )}
@@ -96,10 +96,10 @@ export function NewSessionDialog({ onClose, onCreated }) {
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
           <button className="btn" onClick={onClose} disabled={loading}>
-            取消
+            {t("取消")}
           </button>
           <button className="btn btn-primary" onClick={handleCreate} disabled={loading}>
-            {loading ? "创建中…" : "创建对话"}
+            {loading ? t("创建中…") : t("创建对话")}
           </button>
         </div>
 
@@ -134,7 +134,7 @@ function DirPicker({ onSelect, onClose }) {
         setParent(r.parent ?? null);
         setPath(p);
       } else {
-        setErr(r?.error ?? "加载失败");
+        setErr(r?.error ?? t("加载失败"));
       }
     } catch (e) {
       setErr(String(e));
@@ -155,13 +155,13 @@ function DirPicker({ onSelect, onClose }) {
       <div className="w-[480px] max-w-[92vw] card shadow-2xl animate-slide-up flex flex-col" style={{ background: 'var(--color-card)' }}>
         <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
           <IconFolder size={14} className="text-accent shrink-0" />
-          <span className="flex-1 text-[13.5px] font-semibold truncate">{path ?? "选择磁盘"}</span>
+          <span className="flex-1 text-[13.5px] font-semibold truncate">{path ?? t("选择磁盘")}</span>
           {parent && (
-            <button className="btn btn-ghost h-7 text-[12px]" onClick={goUp} title="上一级">
-              <IconChevronRight size={12} className="rotate-180" /> 上一级
+            <button className="btn btn-ghost h-7 text-[12px]" onClick={goUp} title={t("上一级")}>
+              <IconChevronRight size={12} className="rotate-180" /> {t("上一级")}
             </button>
           )}
-          <button className="btn btn-icon" onClick={() => load(path)} title="刷新">
+          <button className="btn btn-icon" onClick={() => load(path)} title={t("刷新")}>
             <IconRefresh size={13} />
           </button>
           <button className="btn btn-icon" onClick={onClose}>
@@ -196,7 +196,7 @@ function DirPicker({ onSelect, onClose }) {
         )}
 
         <div className="flex justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
-          <button className="btn" onClick={onClose}>取消</button>
+          <button className="btn" onClick={onClose}>{t("取消")}</button>
           {path && (
             <button className="btn btn-primary" onClick={() => onSelect(path)}>
               {t("选择此文件夹")}

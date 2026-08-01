@@ -50,7 +50,7 @@ export function PluginsView() {
   };
 
   const uninstall = async (p) => {
-    if (!window.confirm(`确定卸载插件 ${p.name}@${p.marketplace} 吗？`)) return;
+    if (!window.confirm(`${t("确定卸载插件 ")}${p.name}@${p.marketplace}${t(" 吗？")}`)) return;
     setBusy(`uninstall-${p.key}`);
     try {
       const ok = await actions.uninstallPlugin(p.name, p.marketplace);
@@ -61,7 +61,7 @@ export function PluginsView() {
         actions.toast(t("卸载失败"), "bad");
       }
     } catch (e) {
-      actions.toast(`卸载失败: ${e.message ?? e}`, "bad");
+      actions.toast(`${t("卸载失败")}: ${e.message ?? e}`, "bad");
     } finally {
       setBusy(null);
     }
@@ -69,7 +69,7 @@ export function PluginsView() {
 
   return (
     <PageShell
-      title="插件"
+      title={t("插件")}
       desc={t("管理已安装的插件与扩展模块。插件从 Marketplace 安装，扩展模块是自定义代码（工具/命令/事件钩子）。")}
       actions={
         <div className="flex gap-2">
@@ -78,10 +78,10 @@ export function PluginsView() {
             onClick={() => setShowExtensions(!showExtensions)}
             title={showExtensions ? "隐藏扩展模块" : "查看本地扩展模块"}
           >
-            <IconWrench size={13} /> 扩展模块 {extensions.length > 0 ? `(${extensions.length})` : ""}
+            <IconWrench size={13} /> {t("扩展模块")} {extensions.length > 0 ? `(${extensions.length})` : ""}
           </button>
           <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
-            <IconRefresh size={13} /> 刷新
+            <IconRefresh size={13} /> {t("刷新")}
           </button>
         </div>
       }
@@ -96,7 +96,7 @@ export function PluginsView() {
           {extensions.length === 0 && (
             <p className="text-[12px] text-secondary">
               {t("暂无自定义扩展模块。在")} <span className="font-mono">~/.omp/agent/extensions/</span>（{t("用户级")}）{t("或")}
-              <span className="font-mono"> .omp/extensions/</span>（项目级）放置 <span className="font-mono">.ts</span> / <span className="font-mono">.js</span> 文件即可。
+              <span className="font-mono"> .omp/extensions/</span>{t("（项目级）放置")} <span className="font-mono">.ts</span> / <span className="font-mono">.js</span> 文件即可。
             </p>
           )}
           <div className="space-y-1.5 mt-2">
@@ -167,7 +167,7 @@ export function PluginsView() {
                   {p.author && <span>by {p.author}</span>}
                   {p.homepage && (
                     <a href={p.homepage} target="_blank" rel="noopener" className="flex items-center gap-1 text-accent hover:underline">
-                      <IconExternalLink size={10} /> 主页
+                      <IconExternalLink size={10} /> {t("主页")}
                     </a>
                   )}
                   <span>{t("范围: ")}{p.scope}</span>
@@ -201,10 +201,10 @@ export function PluginsView() {
       <div className="card p-4 mt-4">
         <h3 className="text-[12.5px] font-medium mb-2">{t("什么是插件 vs 扩展模块")}</h3>
         <ul className="text-[12px] text-secondary space-y-1.5 list-disc pl-4">
-          <li><strong className="text-primary">插件（Plugin）</strong>：从 Marketplace 安装的能力包，可包含 skills / agents / commands / MCP servers / 扩展代码</li>
-          <li><strong className="text-primary">扩展模块（Extension）</strong>：单独的 <span className="font-mono">.ts/.js</span> 代码文件，可注册自定义工具、斜杠命令、事件钩子（如安全拦截）</li>
-          <li>禁用插件后其全部能力（skills/MCP/命令）立即从会话移除，启用后需重启生效</li>
-          <li>扩展模块在 <span className="font-mono">config.yml</span> 的 <span className="font-mono">extensions:</span> 列表或 <span className="font-mono">--extension</span> 参数加载</li>
+          <li><strong className="text-primary">{t("插件（Plugin）")}</strong>：{t("从 Marketplace 安装的能力包，可包含 skills / agents / commands / MCP servers / 扩展代码")}</li>
+          <li><strong className="text-primary">{t("扩展模块（Extension）")}</strong>：{t("单独的 ")}<span className="font-mono">.ts/.js</span>{t(" 代码文件，可注册自定义工具、斜杠命令、事件钩子（如安全拦截）")}</li>
+          <li>{t("禁用插件后其全部能力（skills/MCP/命令）立即从会话移除，启用后需重启生效")}</li>
+          <li>{t("扩展模块在 ")}<span className="font-mono">config.yml</span>{t(" 的 ")}<span className="font-mono">extensions:</span>{t(" 列表或 ")}<span className="font-mono">--extension</span>{t(" 参数加载")}</li>
         </ul>
       </div>
     </PageShell>

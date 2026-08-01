@@ -1,10 +1,12 @@
 // 扩展 UI 弹窗:confirm / input / select / editor / notify。
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "../store";
+import { useLang } from "../i18n";
 import { IconAlert, IconX } from "../icons";
 
 export function DialogHost() {
   const { state, actions } = useApp();
+  const { t } = useLang();
   const dlg = state.dialog;
   const [value, setValue] = useState("");
   const inputRef = useRef(null);
@@ -35,7 +37,7 @@ export function DialogHost() {
       <div className="w-[440px] max-w-[92vw] card bg-card shadow-2xl animate-slide-up">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           {dlg.method === "notify" && <IconAlert size={14} className="text-warning" />}
-          <span className="flex-1 text-[13.5px] font-semibold truncate">{dlg.title || "omp 请求"}</span>
+          <span className="flex-1 text-[13.5px] font-semibold truncate">{dlg.title || t("omp 请求")}</span>
           {dlg.timeout && <span className="text-[10.5px] text-secondary font-mono">{Math.round(dlg.timeout / 1000)}s 超时</span>}
           <button className="btn btn-icon" onClick={cancel}><IconX size={13} /></button>
         </div>
@@ -76,21 +78,21 @@ export function DialogHost() {
                   {opt}
                 </button>
               ))}
-              {!(dlg.options ?? []).length && <div className="text-[12px] text-secondary">无选项</div>}
+              {!(dlg.options ?? []).length && <div className="text-[12px] text-secondary">{t("无选项")}</div>}
             </div>
           )}
         </div>
         {(dlg.method === "confirm" || dlg.method === "input" || dlg.method === "editor") && (
           <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
-            <button className="btn" onClick={cancel}>取消</button>
+            <button className="btn" onClick={cancel}>{t("取消")}</button>
             <button className="btn btn-primary" onClick={confirm}>
-              {dlg.method === "confirm" ? "确认" : "确定"}
+              {dlg.method === "confirm" ? t("确认") : t("确定")}
             </button>
           </div>
         )}
         {dlg.method === "notify" && (
           <div className="flex justify-end px-4 py-3 border-t border-border">
-            <button className="btn btn-primary" onClick={confirm}>知道了</button>
+            <button className="btn btn-primary" onClick={confirm}>{t("知道了")}</button>
           </div>
         )}
       </div>

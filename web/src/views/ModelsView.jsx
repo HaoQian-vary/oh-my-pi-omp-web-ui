@@ -39,8 +39,8 @@ export function ModelsView() {
 
   return (
     <PageShell
-      title="模型管理"
-      desc={`当前 ${models.length} 个可用模型。点击"设为当前"切换。`}
+      title={t("模型管理")}
+      desc={`${t("当前 ")}${models.length}${t(" 个可用模型。点击")}"${t("设为当前")}"${t("切换。")}`}
       actions={
         <button className="btn btn-ghost" onClick={() => actions.refreshModels()}>{t("刷新")}</button>
       }
@@ -52,8 +52,8 @@ export function ModelsView() {
         </div>
         <div className="flex gap-1 flex-wrap">
           {providers.map((p) => (
-            <button key={p} className={`btn h-7 text-[12px] ${provider === p ? "bg-accent border-accent text-white" : ""}`} onClick={() => setProvider(p)}>
-              {p}
+            <button key={t(p)} className={`btn h-7 text-[12px] ${provider === p ? "bg-accent border-accent text-white" : ""}`} onClick={() => setProvider(p)}>
+              {t(p)}
             </button>
           ))}
         </div>
@@ -63,13 +63,13 @@ export function ModelsView() {
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-border bg-sidebar text-[11px] text-secondary uppercase tracking-wider">
-              <th className="px-3 py-2 font-medium">模型</th>
+              <th className="px-3 py-2 font-medium">{t("模型")}</th>
               <th className="px-3 py-2 font-medium hidden md:table-cell">Provider</th>
               <th className="px-3 py-2 font-medium text-right hidden sm:table-cell">Context</th>
               <th className="px-3 py-2 font-medium text-right hidden lg:table-cell">Max Tokens</th>
               <th className="px-3 py-2 font-medium hidden lg:table-cell">Reasoning</th>
               <th className="px-3 py-2 font-medium text-right hidden md:table-cell">{t("成本")}</th>
-              <th className="px-3 py-2 font-medium text-right">操作</th>
+              <th className="px-3 py-2 font-medium text-right">{t("操作")}</th>
             </tr>
           </thead>
           <tbody>

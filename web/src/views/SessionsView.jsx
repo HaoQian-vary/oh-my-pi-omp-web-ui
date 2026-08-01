@@ -19,7 +19,7 @@ const GROUPS = [
 
 export function SessionsView() {
   const { state, actions } = useApp();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [sessions, setSessions] = useState(null);
   const [err, setErr] = useState(null);
   const [switching, setSwitching] = useState(null);
@@ -146,7 +146,7 @@ export function SessionsView() {
             <option value="name">{t("按名称")}</option>
           </select>
           <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
-            <IconRefresh size={13} /> 刷新
+            <IconRefresh size={13} /> {t("刷新")}
           </button>
         </div>
       }
@@ -167,7 +167,7 @@ export function SessionsView() {
       {sessions && !hasSessions && (
         <div className="text-secondary text-[13px] py-12 text-center flex flex-col items-center gap-2">
           <IconHistory size={24} className="opacity-40" />
-          暂无历史会话
+          {t("暂无历史会话")}
         </div>
       )}
 
@@ -234,7 +234,7 @@ function SessionItem({
   onOpen, onMenuToggle, onRenameStart, onRenameChange, onRenameSubmit, onRenameCancel,
   onPin, onDelete, onDeleteConfirm, onDeleteCancel
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <div className="card px-3.5 py-3 group relative  transition-colors duration-100">
       <div className="flex items-center gap-3">
@@ -269,7 +269,7 @@ function SessionItem({
           </div>
           <div className="flex items-center gap-3 mt-1 text-[11px] text-secondary">
             <span>{s.messageCount ?? 0} {t("条消息")}</span>
-            <span>{fmtTime(s.mtime)}</span>
+            <span>{fmtTime(s.mtime, lang)}</span>
             {s.cwd && <span className="truncate max-w-[220px]">{s.cwd}</span>}
           </div>
         </div>
@@ -290,7 +290,7 @@ function SessionItem({
             {menuOpen && (
               <div className="absolute right-0 top-full mt-1 w-40 card bg-card shadow-xl z-50 animate-fade-in py-1">
                 <button className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px]" onClick={onRenameStart}>
-                  <IconEdit size={12} /> 重命名
+                  <IconEdit size={12} /> {t("重命名")}
                 </button>
                 <button className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px]" onClick={onPin}>
                   {s.pinned ? <IconPinOff size={12} /> : <IconPin size={12} />}
@@ -298,7 +298,7 @@ function SessionItem({
                 </button>
                 <hr className="border-border my-1" />
                 <button className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px] text-error hover:bg-error/10" onClick={onDelete}>
-                  <IconTrash size={12} /> 删除
+                  <IconTrash size={12} /> {t("删除")}
                 </button>
               </div>
             )}

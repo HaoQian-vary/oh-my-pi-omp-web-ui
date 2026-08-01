@@ -58,7 +58,7 @@ export function AgentsView() {
       desc={t("任务代理：在主对话中分派子任务给指定 agent 并行执行。")}
       actions={
         <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
-          <IconRefresh size={13} /> 刷新
+          <IconRefresh size={13} /> {t("刷新")}
         </button>
       }
     >
@@ -69,15 +69,15 @@ export function AgentsView() {
           <span className="text-[13px] font-medium">{t("如何在对话中使用 Agents")}</span>
         </div>
         <p className="text-[12.5px] text-secondary leading-relaxed mb-2">
-          Agents 通过对话中的 <span className="font-mono text-accent">task</span> 工具使用。在主对话中直接说，例如：
+          {t("Agents 通过对话中的")} <span className="font-mono text-accent">task</span> {t("工具使用。在主对话中直接说，例如：")}
         </p>
         <div className="space-y-1.5 font-mono text-[12px] p-3 rounded-md" style={{ background: 'var(--color-bg-secondary)' }}>
-          <div><span className="text-accent">"用 scout 探索一下这个项目的目录结构"</span> —— 只读侦察</div>
-          <div><span className="text-accent">"让 reviewer 审查我刚改的代码"</span> —— 代码审查</div>
-          <div><span className="text-accent">"派一个 task 代理去研究 xxx 库的用法"</span> —— 独立任务</div>
+          <div><span className="text-accent">"{t("用 scout 探索一下这个项目的目录结构")}"</span> —— {t("只读侦察")}</div>
+          <div><span className="text-accent">"{t("让 reviewer 审查我刚改的代码")}"</span> —— {t("代码审查")}</div>
+          <div><span className="text-accent">"{t("派一个 task 代理去研究 xxx 库的用法")}"</span> —— {t("独立任务")}</div>
         </div>
         <p className="text-[11.5px] text-secondary mt-2">
-          模型会创建子代理（在后台并行运行），完成后结果回到主对话。子代理也可由插件/自定义文件扩展。
+          {t("模型会创建子代理（在后台并行运行），完成后结果回到主对话。子代理也可由插件/自定义文件扩展。")}
         </p>
       </div>
 
@@ -87,10 +87,10 @@ export function AgentsView() {
       <h3 className="text-[11px] uppercase tracking-wider text-secondary/70 font-semibold mb-2 px-1">{t("可用 Agents")}</h3>
       <div className="space-y-2 mb-6">
         {customAgents.map((a) => (
-          <AgentCard key={`custom-${a.name}`} name={a.name} desc={a.description} tools={a.tools} source="自定义" onTest={() => testAgent(a.name)} busy={busy === a.name} />
+          <AgentCard key={`custom-${a.name}`} name={a.name} desc={a.description} tools={a.tools} source={t("自定义")} onTest={() => testAgent(a.name)} busy={busy === a.name} />
         ))}
         {BUILTIN_AGENTS.map((a) => (
-          <AgentCard key={`builtin-${a.name}`} name={a.name} desc={a.desc} tools={a.tools} source="内置" onTest={() => testAgent(a.name)} busy={busy === a.name} />
+          <AgentCard key={`builtin-${a.name}`} name={a.name} desc={a.desc} tools={a.tools} source={t("内置")} onTest={() => testAgent(a.name)} busy={busy === a.name} />
         ))}
       </div>
 
@@ -117,10 +117,10 @@ export function AgentsView() {
       <div className="card p-4 mt-4">
         <h3 className="text-[12.5px] font-medium mb-2">{t("创建自定义 Agent")}</h3>
         <p className="text-[12px] text-secondary leading-relaxed">
-          在 <span className="font-mono">.omp/agents/&lt;name&gt;.md</span>（项目级）或
-          <span className="font-mono"> ~/.omp/agent/agents/</span>（用户级）创建 Markdown 文件：
+          {t("在")} <span className="font-mono">.omp/agents/&lt;name&gt;.md</span>（{t("项目级")}）{t("或")}
+          <span className="font-mono"> ~/.omp/agent/agents/</span>（{t("用户级")}）{t("创建 Markdown 文件：")}
         </p>
-        <pre className="font-mono text-[11.5px] p-3 rounded-md mt-2 overflow-x-auto" style={{ background: 'var(--color-bg-secondary)' }}>
+        <pre className="font-mono text-[11.5px] p-3 rounded-md mt-2 overflow-x-auto" style={{ background: 'var(--color-code)' }}>
 {`---
 name: my-helper
 description: 我的专属助手
@@ -144,11 +144,11 @@ function AgentCard({ name, desc, tools, source, onTest, busy }) {
         <div className="flex items-center gap-2">
           <span className="text-[13.5px] font-medium font-mono">{name}</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: source === '内置' ? 'var(--color-bg-elevated)' : 'var(--color-accent-muted)', color: source === '内置' ? 'var(--color-text-secondary)' : 'var(--color-accent)' }}>
-            {source}
+            {t(source)}
           </span>
         </div>
-        {desc && <p className="text-[12px] text-secondary mt-0.5">{desc}</p>}
-        {tools && <div className="text-[11px] text-secondary/70 mt-1 font-mono">{tools}</div>}
+        {desc && <p className="text-[12px] text-secondary mt-0.5">{t(desc)}</p>}
+        {tools && <div className="text-[11px] text-secondary/70 mt-1 font-mono">{t(tools)}</div>}
       </div>
       <button className="btn h-7 shrink-0" onClick={onTest} disabled={busy} title={t("测试")}>
         {busy ? t("测试中…") : t("测试")}

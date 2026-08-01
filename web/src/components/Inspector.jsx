@@ -18,10 +18,11 @@ const TABS = [
 
 export function Inspector() {
   const { state, actions } = useApp();
+  const { t } = useLang();
   const { inspectorTab } = state;
 
   return (
-    <aside className="w-72 shrink-0 bg-sidebar border-l border-border flex flex-col min-h-0">
+    <aside className="w-64 shrink-0 bg-sidebar border-l border-border flex flex-col min-h-0">
       {/* tabs */}
       <div className="flex items-center border-b border-border shrink-0 overflow-x-auto">
         {TABS.map((t) => (
@@ -35,7 +36,7 @@ export function Inspector() {
           </button>
         ))}
         <span className="flex-1" />
-        <button className="btn btn-icon mr-1" title="关闭 Inspector (Ctrl+I)" onClick={() => actions.dispatch({ type: "inspector", open: false })}>
+        <button className="btn btn-icon mr-1" title={`${t("关闭")} Inspector (Ctrl+I)`} onClick={() => actions.dispatch({ type: "inspector", open: false })}>
           <IconX size={13} />
         </button>
       </div>
@@ -74,23 +75,23 @@ function ContextTab() {
           <span className="font-mono">{fmtTokens(cu?.contextWindow)}</span>
         </div>
         <div className="text-[11.5px] text-secondary mt-1">
-          使用率 <span className={`font-mono ${pct > 80 ? "text-error" : "text-primary"}`}>{pct.toFixed(1)}%</span>
+          {t("使用率")} <span className={`font-mono ${pct > 80 ? "text-error" : "text-primary"}`}>{pct.toFixed(1)}%</span>
         </div>
       </Section>
       <Section title={t("会话")}>
         <KV k="ID" v={<span className="font-mono text-[10.5px] break-all">{st?.sessionId ?? "—"}</span>} />
         <KV k={t("消息数")} v={st?.messageCount ?? 0} />
         <KV k={t("队列")} v={st?.queuedMessageCount ?? 0} />
-        <KV k={t("自动压缩")} v={st?.autoCompactionEnabled ? "开" : "关"} />
-        <KV k="Fast Mode" v={st?.fastModeActive ? "激活" : st?.fastModeEnabled ? "启用" : "关"} />
+        <KV k={t("自动压缩")} v={st?.autoCompactionEnabled ? t("开") : t("关")} />
+        <KV k="Fast Mode" v={st?.fastModeActive ? t("激活") : st?.fastModeEnabled ? t("启用") : t("关")} />
       </Section>
       <Section title={t("模型")}>
         <KV k="Provider" v={<span className="font-mono">{st?.model?.provider ?? "—"}</span>} />
         <KV k="Model" v={<span className="font-mono">{st?.model?.id ?? "—"}</span>} />
         <KV k="Base URL" v={<span className="font-mono text-[10.5px] break-all">{st?.model?.baseUrl ?? "—"}</span>} />
-        <KV k="上下文窗口" v={<span className="font-mono">{fmtTokens(st?.model?.contextWindow)}</span>} />
+        <KV k={t("上下文窗口")} v={<span className="font-mono">{fmtTokens(st?.model?.contextWindow)}</span>} />
         <KV k="Max Tokens" v={<span className="font-mono">{fmtTokens(st?.model?.maxTokens)}</span>} />
-        <KV k="Reasoning" v={st?.model?.reasoning ? "支持" : "不支持"} />
+        <KV k="Reasoning" v={st?.model?.reasoning ? t("支持") : t("不支持")} />
       </Section>
       <Section title={t("队列模式")}>
         <KV k="Steering" v={st?.steeringMode ?? "—"} />
@@ -195,7 +196,8 @@ function TasksTab() {
 
 // ---------- Memory(占位,由 omp 管理) ----------
 function MemoryTab() {
-  return <Placeholder text="记忆由 omp 的 memory 后端管理(如 Mnemosyne)。当前 RPC 会话未暴露记忆内容。" />;
+  const { t } = useLang();
+  return <Placeholder text={t("记忆由 omp 的 memory 后端管理(如 Mnemosyne)。当前 RPC 会话未暴露记忆内容。")} />;
 }
 
 // ---------- Tools(会话内工具) ----------
@@ -241,12 +243,14 @@ function ToolsTab() {
 
 // ---------- MCP(占位) ----------
 function McpTab() {
-  return <Placeholder text="MCP 服务器由 omp 的 mcp 配置管理。当前 RPC 协议未暴露 MCP 连接状态。" />;
+  const { t } = useLang();
+  return <Placeholder text={t("MCP 服务器由 omp 的 mcp 配置管理。当前 RPC 协议未暴露 MCP 连接状态。")} />;
 }
 
 // ---------- Variables(占位) ----------
 function VariablesTab() {
-  return <Placeholder text="会话变量与扩展注入的状态。当前会话无可见变量。" />;
+  const { t } = useLang();
+  return <Placeholder text={t("会话变量与扩展注入的状态。当前会话无可见变量。")} />;
 }
 
 function Placeholder({ text }) {
@@ -268,9 +272,9 @@ function Section({ title, children }) {
 
 function KV({ k, v }) {
   return (
-    <div className="flex items-start justify-between gap-3 text-[11.5px]">
-      <span className="text-secondary shrink-0">{k}</span>
-      <span className="text-primary text-right break-all">{v}</span>
+    <div className="flex items-baseline text-[11.5px]">
+      <span className="text-secondary shrink-0 w-[72px] truncate" style={{ color: 'var(--color-text-muted)' }}>{k}</span>
+      <span className="text-primary break-all pl-2">{v}</span>
     </div>
   );
 }

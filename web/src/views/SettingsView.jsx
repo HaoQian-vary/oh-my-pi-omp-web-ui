@@ -40,7 +40,7 @@ export function SettingsView() {
     try {
       const r = await fn();
       if (r?.ok) actions.toast(okMsg);
-      else actions.toast(`失败: ${r?.error ?? ""}`, "bad");
+      else actions.toast(`${t("失败")}: ${r?.error ?? ""}`, "bad");
     } finally {
       setBusy(null);
     }
@@ -57,7 +57,7 @@ export function SettingsView() {
         body: JSON.stringify({ providerId }),
       }).then((res) => res.json());
       if (r?.ok) {
-        actions.toast(`已退出登录: ${providerId}`);
+        actions.toast(`${t("已退出登录: ")}${providerId}`);
         // 刷新登录状态列表
         fetch("/api/login_providers")
           .then((res) => res.json())
@@ -65,7 +65,7 @@ export function SettingsView() {
           .catch(() => {});
         actions.refreshModels();
       } else {
-        actions.toast(`退出失败: ${r?.error ?? ""}`, "bad");
+        actions.toast(`${t("退出失败: ")}${r?.error ?? ""}`, "bad");
       }
     } finally {
       setBusy(null);
@@ -126,8 +126,8 @@ export function SettingsView() {
           onClick={() => actions.dispatch({ type: "view", view: "appearance" })}
         >
           <IconSettings size={15} />
-          <span className="text-[13.5px]">外观设置</span>
-          <span className="text-[11.5px] text-secondary ml-auto">切换主题</span>
+          <span className="text-[13.5px]">{t("外观设置")}</span>
+          <span className="text-[11.5px] text-secondary ml-auto">{t("切换主题")}</span>
         </button>
       </div>
 
@@ -197,9 +197,9 @@ export function SettingsView() {
         </div>
         <div className="px-4 py-3">
           <div className="text-[12px] text-secondary leading-relaxed">
-            Provider 的 API Key、Endpoint、Temperature 等参数由 omp 的配置文件管理
+            {t("Provider 的 API Key、Endpoint、Temperature 等参数由 omp 的配置文件管理")}
             (<span className="font-mono">~/.omp/agent/config.yml</span>)。
-            修改后需重启 omp 生效。本界面只读展示当前激活的 Provider 信息,避免凭据泄漏到浏览器。
+            {t("修改后需重启 omp 生效。本界面只读展示当前激活的 Provider 信息,避免凭据泄漏到浏览器。")}
           </div>
         </div>
       </div>
@@ -210,7 +210,7 @@ export function SettingsView() {
         {!loginInfo && <div className="text-[12.5px] text-secondary">{t("加载中…")}</div>}
         {loginInfo && !loginInfo.length && (
           <div className="text-[12.5px] text-secondary flex items-center gap-2">
-            <IconUser size={13} /> 无可用登录 Provider
+            <IconUser size={13} /> {t("无可用登录 Provider")}
           </div>
         )}
         {loginInfo?.map((p) => (
@@ -230,7 +230,7 @@ export function SettingsView() {
               </>
             ) : (
               <button className="btn h-6 text-[11.5px]" onClick={() => run(`login-${p.id}`, () => fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerId: p.id }) }).then((r) => r.json()), `登录流程已启动: ${p.id}`)}>
-                登录
+                {t("登录")}
               </button>
             )}
           </div>
@@ -244,7 +244,7 @@ export function SettingsView() {
           <KV k="Session ID" v={st?.sessionId ?? "—"} mono />
           <KV k={t("会话文件")} v={st?.sessionFile ? st.sessionFile.split(/[\\/]/).pop() : "—"} mono />
           <KV k={t("消息数")} v={st?.messageCount ?? 0} />
-          <KV k="Token 速率" v={st?.tokensPerSecond ? `${st.tokensPerSecond}/s` : "—"} mono />
+          <KV k={t("Token 速率")} v={st?.tokensPerSecond ? `${st.tokensPerSecond}/s` : "—"} mono />
         </div>
       </div>
     </PageShell>

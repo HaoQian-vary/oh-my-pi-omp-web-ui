@@ -21,18 +21,19 @@ export default {
       fontFamily: {
         sans: [
           "Inter",
+          "Segoe UI",
           "-apple-system",
           "BlinkMacSystemFont",
-          "Segoe UI",
+          "Roboto",
           "Microsoft YaHei",
           "PingFang SC",
           "sans-serif",
         ],
         mono: [
           "JetBrains Mono",
-          "SFMono-Regular",
-          "Consolas",
           "Cascadia Code",
+          "Consolas",
+          "SFMono-Regular",
           "Liberation Mono",
           "monospace",
         ],

@@ -1,0 +1,11 @@
+import { useApp } from "../store";
+import { useLang } from "../i18n";
+import { PageShell } from "./PageShell";
+import { IconFolder, IconHistory } from "../icons";
+export function WorkspacesView() {
+  const { t } = useLang();
+  const { state } = useApp();
+  const st = state.state;
+  const cwd = st?.sessionFile ? st.sessionFile.split(/[\\/]/).slice(0, -1).join("/") : "\u2014";
+  return /* @__PURE__ */ React.createElement(PageShell, { title: t("\u5DE5\u4F5C\u533A"), desc: t("omp \u8FDB\u7A0B\u7684\u5DE5\u4F5C\u76EE\u5F55\u4E0E\u4F1A\u8BDD\u5B58\u50A8\u4F4D\u7F6E\u3002") }, /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "card p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 mb-3" }, /* @__PURE__ */ React.createElement(IconFolder, { size: 15, className: "text-accent" }), /* @__PURE__ */ React.createElement("span", { className: "text-[13px] font-medium" }, t("\u5F53\u524D\u5DE5\u4F5C\u533A"))), /* @__PURE__ */ React.createElement("div", { className: "text-[12px] text-secondary font-mono break-all" }, cwd)), /* @__PURE__ */ React.createElement("div", { className: "card p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 mb-3" }, /* @__PURE__ */ React.createElement(IconHistory, { size: 15, className: "text-accent" }), /* @__PURE__ */ React.createElement("span", { className: "text-[13px] font-medium" }, t("\u4F1A\u8BDD\u6587\u4EF6"))), /* @__PURE__ */ React.createElement("div", { className: "text-[12px] text-secondary font-mono break-all" }, st?.sessionFile ?? "\u2014"))), /* @__PURE__ */ React.createElement("div", { className: "text-[12px] text-secondary mt-4 leading-relaxed" }, "\u5DE5\u4F5C\u533A\u7531 omp \u542F\u52A8\u53C2\u6570 ", /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, "--cwd"), " \u51B3\u5B9A,\u4F1A\u8BDD\u6587\u4EF6\u5B58\u50A8\u5728", /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, " ~/.omp/agent/sessions/"), " \u4E0B,\u6309\u5DE5\u4F5C\u76EE\u5F55\u7F16\u7801\u5206\u76EE\u5F55\u5B58\u653E\u3002"));
+}

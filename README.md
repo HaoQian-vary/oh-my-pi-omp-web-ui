@@ -359,7 +359,8 @@ npm start        # run backend
 
 - **界面语言**：随时在**设置 → 外观设置**切换**中文 / English**——默认中文，localStorage 持久化，重启后保留
 - **模型切换**：顶部栏下拉直接切换当前模型（按 Provider 分组、显示上下文窗口）；也可在**模型**页面管理全部 120+ 模型（按 Provider 筛选、搜索、设为当前）
-- **外观主题**：随时在**设置 → 外观设置**切换——Dark / Light / System / Midnight / GitHub Dark / GitHub Light 六套主题，CSS 变量驱动、即时生效、重启后保留
+- **外观主题**：随时在**设置 → 外观设置**切换——Dim（默认，柔和深色护眼）/ Dark / Light / System / Midnight / GitHub Dark / GitHub Light 七套主题，CSS 变量驱动、即时生效、重启后保留
+- **字体排版**：Inter/Segoe UI 正文 + JetBrains Mono/Consolas 等宽（数字对齐），14px 基础字号、1.6 行高、激活导航加粗
 - **Provider 登录**：在**设置 → 登录**管理模型凭据，无需编辑配置文件
   - **登录**：点击 Provider（如 DeepSeek、智谱、小米）旁的「登录」按钮，按 omp 认证流程操作；API Key 保存在 `~/.omp/agent/agent.db`（你的主目录，不在本项目内）
   - **退出登录**：点击 Provider 旁的「退出登录」删除其本地 API Key——适合在控制台轮换/吊销 Key 后更换新 Key。删除前有确认弹窗；操作后自动重启 omp 进程刷新凭据状态

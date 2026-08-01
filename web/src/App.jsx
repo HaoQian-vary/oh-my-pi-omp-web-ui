@@ -20,12 +20,9 @@ function AppContent() {
   const { sidebarOpen, inspector, view } = state;
 
   return (
-    <div className="flex h-full w-full overflow-hidden" style={{ background: "var(--color-bg)", color: "var(--color-text-primary)" }}>
-      {/* 左侧 Sidebar */}
+    <div className="flex h-full w-full overflow-hidden" style={{ background: 'var(--color-bg)', color: 'var(--color-text-primary)' }}>
       <Sidebar />
-      {/* 中间 Workspace */}
       <Workspace />
-      {/* 右侧 Inspector(仅对话视图) */}
       {view === "chat" && inspector && <Inspector />}
       <DialogHost />
       <Toasts />

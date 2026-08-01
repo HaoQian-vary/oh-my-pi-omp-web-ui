@@ -63,7 +63,7 @@ export function MarketplaceView() {
         actions.toast(t("安装失败"), "bad");
       }
     } catch (e) {
-      actions.toast(`安装失败: ${e.message ?? e}`, "bad");
+      actions.toast(`${t("安装失败")}: ${e.message ?? e}`, "bad");
     } finally {
       setBusy(null);
     }
@@ -80,7 +80,7 @@ export function MarketplaceView() {
         actions.toast(t("卸载失败"), "bad");
       }
     } catch (e) {
-      actions.toast(`卸载失败: ${e.message ?? e}`, "bad");
+      actions.toast(`${t("卸载失败")}: ${e.message ?? e}`, "bad");
     } finally {
       setBusy(null);
     }
@@ -120,10 +120,10 @@ export function MarketplaceView() {
       actions={
         <div className="flex gap-2">
           <button className="btn btn-ghost" onClick={() => doSearch()} title={t("刷新")}>
-            <IconRefresh size={13} /> 刷新
+            <IconRefresh size={13} /> {t("刷新")}
           </button>
           <button className="btn" onClick={() => setAddOpen(true)} title={t("添加市场源")}>
-            <IconPlug size={13} /> 添加源
+            <IconPlug size={13} /> {t("添加源")}
           </button>
         </div>
       }
@@ -175,8 +175,8 @@ export function MarketplaceView() {
               <h3 className="text-[14px] font-medium mb-2">{t("未找到匹配插件")}</h3>
               <p className="text-[12.5px] text-secondary max-w-md mx-auto">
                 {marketplaces.length === 0
-                  ? "先添加市场源，然后搜索。常用市场：anthropics/claude-plugins-official（官方插件市场）"
-                  : "换一个关键词试试，或添加更多市场源。"}
+                  ? t("先添加市场源，然后搜索。常用市场：anthropics/claude-plugins-official（官方插件市场）")
+                  : t("换一个关键词试试，或添加更多市场源。")}
               </p>
             </div>
           )}
@@ -203,7 +203,7 @@ export function MarketplaceView() {
                       {p.author?.name && <span>by {p.author.name}</span>}
                       {p.homepage && (
                         <a href={p.homepage} target="_blank" rel="noopener" className="flex items-center gap-1 text-accent hover:underline">
-                          <IconExternalLink size={10} /> 主页
+                          <IconExternalLink size={10} /> {t("主页")}
                         </a>
                       )}
                       {p.keywords?.length > 0 && <span className="text-secondary/60">{p.keywords.slice(0, 5).join(", ")}</span>}
@@ -253,18 +253,18 @@ export function MarketplaceView() {
               <label className="text-[12.5px] text-secondary block mb-1.5">{t("市场源地址")}</label>
               <input
                 className="input h-8"
-                placeholder="如 anthropics/claude-plugins-official 或 https://github.com/org/repo"
+                placeholder="anthropics/claude-plugins-official / https://github.com/org/repo"
                 value={addSource}
                 onChange={(e) => setAddSource(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") addMarketplace(); }}
                 autoFocus
               />
               <div className="mt-2 text-[11px] text-secondary">
-                支持格式：GitHub 简写 <span className="font-mono">owner/repo</span>、Git URL、本地目录、直接 JSON URL
+                {t("支持格式：GitHub 简写")} <span className="font-mono">owner/repo</span>{t("、Git URL、本地目录、直接 JSON URL")}
               </div>
             </div>
             <div className="flex justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
-              <button className="btn" onClick={() => setAddOpen(false)}>取消</button>
+              <button className="btn" onClick={() => setAddOpen(false)}>{t("取消")}</button>
               <button className="btn btn-primary" onClick={addMarketplace} disabled={addingSource || !addSource.trim()}>
                 {addingSource ? t("添加中…") : t("添加")}
               </button>

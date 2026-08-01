@@ -67,7 +67,8 @@ function Welcome() {
         {suggestions.map((s) => (
           <button
             key={s}
-            className="card px-3 py-2.5 text-left text-[12.5px] text-secondary hover:text-primary transition-colors duration-150"
+            className="rounded-lg px-4 py-3 text-left text-[12.5px] text-secondary hover:text-primary transition-all duration-150"
+            style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'var(--shadow-sm, none)' }}
             onClick={() => actions.sendPrompt(s)}
           >
             {t(s)}

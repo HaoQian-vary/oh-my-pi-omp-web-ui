@@ -27,6 +27,7 @@
   --color-user-border: rgba(47, 129, 247, 0.3);
   --color-assistant-bg: var(--color-bg-tertiary);
   --color-terminal-bg: var(--color-bg);
+  --color-code: var(--color-bg-secondary); /* 代码块底色，默认同面板，主题可覆盖 */
   --color-terminal-text: var(--color-text-primary);
   --color-terminal-error: var(--color-error);
   --color-terminal-success: var(--color-success);
@@ -53,6 +54,70 @@
   --scrollbar-thumb: #30363d;
   --scrollbar-thumb-hover: #484f58;
   --scrollbar-track: transparent;
+}
+
+/* ===== Dim Mode：柔和深色（VS Code 风格冷调，久看不累） ===== */
+[data-theme="dim"] {
+  /* 背景色系：紫灰冷调，整体提亮避免死黑 */
+  --color-bg: #1e1e2e;            /* bg-main：主对话区 */
+  --color-bg-secondary: #232334;  /* bg-panel：侧边栏（与主区平滑过渡） */
+  --color-bg-tertiary: #181825;   /* 卡片/代码衬底（略深一档） */
+  --color-bg-elevated: #313244;   /* 悬浮/输入框 surface */
+  --color-border: #313244;        /* border-soft：低调分隔线 */
+  --color-border-hover: #45475a;
+
+  /* 文本色系：降级对比度，避免纯白 */
+  --color-text-primary: #cbd5e1;  /* text-primary：slate-300 柔和灰白 */
+  --color-text-secondary: #94a3b8; /* text-secondary：slate-400 暗灰 */
+  --color-text-muted: #64748b;    /* slate-500 */
+
+  /* 强调色：柔和蓝（Catppuccin 蓝） */
+  --color-accent: #89b4fa;
+  --color-accent-hover: #a6c8ff;
+  --color-accent-muted: rgba(137, 180, 250, 0.15);
+
+  --color-success: #a6e3a1;
+  --color-success-hover: #94e2d5;
+  --color-warning: #f9e2af;
+  --color-warning-hover: #f5c2e7;
+  --color-error: #f38ba8;
+  --color-error-hover: #eba0ac;
+
+  --color-sidebar: var(--color-bg-secondary);
+  --color-card: var(--color-bg-secondary);
+  --color-input-bg: #181825;      /* 输入框：比主区深，配合内阴影凹陷 */
+  --color-button-bg: var(--color-bg-secondary);
+  --color-button-hover: var(--color-bg-elevated);
+  --color-user-bubble: rgba(137, 180, 250, 0.12);
+  --color-user-border: rgba(137, 180, 250, 0.25);
+  --color-assistant-bg: var(--color-bg-secondary);
+  --color-terminal-bg: #181825;
+  --color-code: #181825;         /* 代码块：比主区 #1e1e2e 深一档，微妙区分 */
+  --color-terminal-text: var(--color-text-primary);
+  --color-terminal-error: var(--color-error);
+  --color-terminal-success: var(--color-success);
+
+  /* diff：柔和色块 */
+  --color-diff-add-bg: #1e3b2a;
+  --color-diff-add-text: #a6e3a1;
+  --color-diff-add-gutter: #40a02b;
+  --color-diff-del-bg: #3b1e2e;
+  --color-diff-del-text: #f38ba8;
+  --color-diff-del-gutter: #d20f39;
+  --color-diff-hunk-bg: var(--color-bg-tertiary);
+  --color-diff-hunk-text: var(--color-text-secondary);
+  --color-icon: var(--color-text-secondary);
+  --color-icon-hover: var(--color-text-primary);
+
+  /* 阴影：更柔和 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.35);
+  /* 输入框内阴影：微凹陷 */
+  --shadow-input-inset: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+
+  --scrollbar-thumb: #45475a;
+  --scrollbar-thumb-hover: #585b70;
 }
 
 [data-theme="light"] {
@@ -232,10 +297,11 @@ body {
     height: 100%;
   }
   body {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Microsoft YaHei", "PingFang SC", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 14px;
+    line-height: 1.6;
     overflow: hidden;
   }
 }
@@ -333,8 +399,9 @@ body {
   }
 
   .nav-item {
-    @apply flex items-center gap-2 w-full px-2 h-8 rounded-md text-[13px] cursor-pointer select-none transition-colors duration-100;
+    @apply flex items-center gap-2 w-full px-2 h-9 rounded-md text-[14.5px] cursor-pointer select-none transition-colors duration-100;
     color: var(--color-text-secondary);
+    font-weight: 400;
   }
   .nav-item:hover {
     background: var(--color-bg-elevated);
@@ -343,6 +410,7 @@ body {
   .nav-item.active {
     background: var(--color-bg-elevated);
     color: var(--color-text-primary);
+    font-weight: 600;
   }
 
   .tab-item {
@@ -373,13 +441,13 @@ body {
   .md li { @apply my-0.5; }
   .md code {
     @apply font-mono text-[12.5px] border rounded px-1.5 py-px;
-    background: var(--color-bg-secondary);
+    background: var(--color-code);
     border-color: var(--color-border);
     color: var(--color-text-primary);
   }
   .md pre {
     @apply my-2 rounded-lg border overflow-x-auto;
-    background: var(--color-bg-secondary);
+    background: var(--color-code);
     border-color: var(--color-border);
   }
   .md pre code {

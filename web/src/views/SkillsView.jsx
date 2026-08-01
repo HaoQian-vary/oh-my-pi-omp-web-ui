@@ -71,7 +71,7 @@ export function SkillsView() {
       desc={t("已发现的能力包（Skills）。通过 skill:// 协议或 /skill:<name> 命令使用。")}
       actions={
         <button className="btn btn-ghost" onClick={load} title={t("刷新")}>
-          <IconRefresh size={13} /> 刷新
+          <IconRefresh size={13} /> {t("刷新")}
         </button>
       }
     >
@@ -110,11 +110,11 @@ export function SkillsView() {
           <IconZap size={32} className="mx-auto text-secondary/40 mb-3" />
           <h3 className="text-[14px] font-medium mb-2">{t("暂未发现 Skills")}</h3>
           <p className="text-[12.5px] text-secondary max-w-md mx-auto leading-relaxed">
-            Skills 是基于文件的能力包，放在以下目录即可自动发现：
+            {t("Skills 是基于文件的能力包，放在以下目录即可自动发现：")}
           </p>
           <div className="mt-3 text-[11.5px] font-mono text-secondary bg-[var(--color-bg-secondary)] rounded-md p-3 text-left max-w-sm mx-auto">
-            <div>~/.omp/agent/skills/&lt;name&gt;/SKILL.md <span className="text-accent">(用户级)</span></div>
-            <div className="mt-1">.omp/skills/&lt;name&gt;/SKILL.md <span className="text-accent">(项目级)</span></div>
+            <div>~/.omp/agent/skills/&lt;name&gt;/SKILL.md <span className="text-accent">({t("用户级")})</span></div>
+            <div className="mt-1">.omp/skills/&lt;name&gt;/SKILL.md <span className="text-accent">({t("项目级")})</span></div>
           </div>
         </div>
       )}
@@ -214,11 +214,11 @@ export function SkillsView() {
       <div className="card p-4 mt-4">
         <h3 className="text-[12.5px] font-medium mb-2">{t("关于 Skills")}</h3>
         <ul className="text-[12px] text-secondary space-y-1.5 list-disc pl-4">
-          <li>Skills 是基于文件的能力包，每个 skill 包含一个 SKILL.md 文件</li>
-          <li>在聊天中输入 <span className="font-mono text-accent">/skill:&lt;name&gt;</span> 调用 skill</li>
-          <li>模型可以通过 <span className="font-mono text-accent">skill://&lt;name&gt;</span> 协议读取 skill 内容</li>
-          <li>支持多种来源：native、claude、codex、agents、github 等</li>
-          <li><span className="font-mono">alwaysApply: true</span> 的 skill 会自动注入到系统提示中</li>
+          <li>{t("Skills 是基于文件的能力包，每个 skill 包含一个 SKILL.md 文件")}</li>
+          <li>{t("在聊天中输入")} <span className="font-mono text-accent">/skill:&lt;name&gt;</span> {t("调用 skill")}</li>
+          <li>{t("模型可以通过")} <span className="font-mono text-accent">skill://&lt;name&gt;</span> {t("协议读取 skill 内容")}</li>
+          <li>{t("支持多种来源：native、claude、codex、agents、github 等")}</li>
+          <li><span className="font-mono">alwaysApply: true</span> {t("的 skill 会自动注入到系统提示中")}</li>
         </ul>
       </div>
     </PageShell>
@@ -237,10 +237,10 @@ function renderSimpleMarkdown(md) {
     .replace(/^# (.+)$/gm, '<h1 class="text-[16px] font-bold mt-4 mb-2 border-b border-border pb-1.5">$1</h1>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`([^`]+)`/g, '<code class="font-mono text-[12px] bg-[var(--color-bg-secondary)] border border-border rounded px-1 py-px">$1</code>')
+    .replace(/`([^`]+)`/g, '<code class="font-mono text-[12px] bg-[var(--color-code)] border border-border rounded px-1 py-px">$1</code>')
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
-    .replace(/^```(\w*)\n([\s\S]*?)```$/gm, '<pre class="my-2 rounded-lg border border-border bg-[var(--color-bg-secondary)] overflow-x-auto"><code class="block p-3 text-[12px] font-mono leading-relaxed">$2</code></pre>')
+    .replace(/^```(\w*)\n([\s\S]*?)```$/gm, '<pre class="my-2 rounded-lg border border-border bg-[var(--color-code)] overflow-x-auto"><code class="block p-3 text-[12px] font-mono leading-relaxed">$2</code></pre>')
     .replace(/\n{2,}/g, '</p><p class="my-2">')
     .replace(/\n/g, '<br/>')
     .replace(/^(?!<[hluop])/gm, '<p class="my-1">')

@@ -12,7 +12,7 @@ export function WorkspacesView() {
   const cwd = st?.sessionFile ? st.sessionFile.split(/[\\/]/).slice(0, -1).join("/") : "—";
 
   return (
-    <PageShell title="工作区" desc={t("omp 进程的工作目录与会话存储位置。")}>
+    <PageShell title={t("工作区")} desc={t("omp 进程的工作目录与会话存储位置。")}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -30,8 +30,8 @@ export function WorkspacesView() {
         </div>
       </div>
       <div className="text-[12px] text-secondary mt-4 leading-relaxed">
-        工作区由 omp 启动参数 <span className="font-mono">--cwd</span> 决定,会话文件存储在
-        <span className="font-mono"> ~/.omp/agent/sessions/</span> 下,按工作目录编码分目录存放。
+        {t("工作区由 omp 启动参数")} <span className="font-mono">--cwd</span>{t("决定,会话文件存储在")}
+        <span className="font-mono"> ~/.omp/agent/sessions/</span>{t(" 下,按工作目录编码分目录存放。")}
       </div>
     </PageShell>
   );

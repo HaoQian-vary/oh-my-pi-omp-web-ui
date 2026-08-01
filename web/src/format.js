@@ -21,13 +21,20 @@ export function fmtBytes(n) {
   return `${n} B`;
 }
 
-export function fmtTime(ts) {
+export function fmtTime(ts, lang = "zh") {
   if (!ts) return "";
   const d = new Date(ts);
   const now = Date.now();
   const diff = now - d.getTime();
-  if (diff < 60_000) return "刚刚";
-  if (diff < 3600_000) return `${Math.floor(diff / 60_000)} 分钟前`;
+  if (lang === "en") {
+    if (diff < 60_000) return "just now";
+    if (diff < 3600_000) return `${Math.floor(diff / 60_000)} min ago`;
+    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)} hr ago`;
+  } else {
+    if (diff < 60_000) return "刚刚";
+    if (diff < 3600_000) return `${Math.floor(diff / 60_000)} 分钟前`;
+    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)} 小时前`;
+  }
   const pad = (x) => String(x).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

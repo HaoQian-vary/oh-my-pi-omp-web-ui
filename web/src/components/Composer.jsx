@@ -41,13 +41,32 @@ export function Composer() {
     setSlashIdx(0);
   }, [slashMatch]);
 
-  // 自动调整高度
-  useEffect(() => {
-    const ta = taRef.current;
-    if (!ta) return;
-    ta.style.height = "auto";
-    ta.style.height = Math.min(220, ta.scrollHeight) + "px";
-  }, [text]);
+  // 输入框高度（固定，不随输入变化；拖上边缘调节）
+  const [taHeight, setTaHeight] = useState(64);
+  const resizeStartRef = useRef(null);
+
+  // 拖拽上边缘调高度
+  const onResizeStart = (e) => {
+    e.preventDefault();
+    resizeStartRef.current = { y: e.clientY, h: taHeight };
+    const onMove = (ev) => {
+      if (!resizeStartRef.current) return;
+      const delta = resizeStartRef.current.y - ev.clientY; // 向上拖 => 变大
+      const h = Math.max(48, Math.min(320, resizeStartRef.current.h + delta));
+      setTaHeight(h);
+    };
+    const onUp = () => {
+      resizeStartRef.current = null;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.body.style.cursor = "ns-resize";
+    document.body.style.userSelect = "none";
+  };
 
   // Prompt 库“一键使用”填充
   useEffect(() => {
@@ -183,11 +202,17 @@ export function Composer() {
         )}
 
         {/* 输入行 */}
-        <div className="card overflow-hidden" style={{ background: 'var(--color-input-bg)' }}>
+        <div className="card overflow-hidden" style={{ background: 'var(--color-input-bg)', boxShadow: 'var(--shadow-input-inset, none)' }}>
+          {/* 顶部拖拽条：拖上边缘调输入框高度 */}
+          <div
+            className="h-[3px] cursor-ns-resize hover:bg-accent/50 transition-colors duration-100"
+            onMouseDown={onResizeStart}
+            title={t("拖拽调整输入框高度")}
+          />
           <textarea
             ref={taRef}
-            className="w-full bg-transparent border-0 outline-none resize-none px-3 pt-2.5 pb-1 text-[13.5px] leading-relaxed"
-            style={{ color: 'var(--color-text-primary)' }}
+            className="w-full bg-transparent border-0 outline-none resize-none px-3 pt-2 text-[13.5px] leading-relaxed overflow-y-auto"
+            style={{ color: 'var(--color-text-primary)', height: `${taHeight}px` }}
             placeholder={isStreaming ? t("运行中… 输入内容并按 Enter 插话，或点停止终止") : t("输入消息 — Enter 发送,Shift+Enter 换行,Ctrl+Enter 发送,输入 / 查看命令")}
             rows={1}
             value={text}
