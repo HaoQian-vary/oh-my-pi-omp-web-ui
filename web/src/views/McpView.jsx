@@ -1,6 +1,7 @@
 // MCP 服务器:由 omp 配置管理,展示说明与协议能力。
 import { PageShell } from "./PageShell";
 import { IconGlobe } from "../icons";
+import { useLang } from "../i18n";
 
 export function McpView() {
   const { t } = useLang();
