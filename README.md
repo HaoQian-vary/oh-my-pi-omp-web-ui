@@ -34,7 +34,6 @@ This project is fully open source under the **MIT License** — see [LICENSE](LI
 - [Protocol Notes](#protocol-notes)
 - [Development](#development)
 - [Known Limitations](#known-limitations)
-- [FAQ](#faq)
 
 ---
 
@@ -285,27 +284,6 @@ npm start        # run backend
 
 ---
 
-## FAQ
-
-**Q: start.bat flashes and closes?**
-A: Check Node.js and omp are installed. start.bat detects both and shows guidance when missing; if it still flashes, run `start.bat` from a cmd window to see the error.
-
-**Q: Port 3838 in use?**
-A: start.bat auto-cleans old processes on 3838. Or `taskkill /F /PID <pid>` manually and restart.
-
-**Q: Can't switch thinking level after changing model?**
-A: Each model supports its own set of levels (e.g. deepseek: high/max only). The dropdown adapts automatically; models without thinking support (e.g. gpt-4) disable the selector.
-
-**Q: The model isn't working in my chosen folder?**
-A: After choosing a folder in the new-session dialog, the server restarts omp in that directory (~seconds). The top bar shows the current working dir — verify it changed.
-
-**Q: Where are API keys stored?**
-A: In `~/.omp/agent/agent.db` (user home), not in this project. The code locates it via `homedir()` and contains no credential values. Uploading to GitHub won't leak them.
-
----
-
----
-
 # omp-web
 
 给 [Oh My Pi](https://github.com/can1357/oh-my-pi)（omp）编码代理打造的本地 Web 界面。终端里用 omp 不方便？打开浏览器就能用。
@@ -342,7 +320,6 @@ A: In `~/.omp/agent/agent.db` (user home), not in this project. The code locates
 - [协议说明](#协议说明)
 - [开发](#开发)
 - [已知限制](#已知限制)
-- [常见问题](#常见问题)
 
 ---
 
@@ -594,19 +571,3 @@ npm start        # 启动后端
 
 ---
 
-## 常见问题
-
-**Q: 双击 start.bat 一闪而过？**
-A: 检查是否安装了 Node.js 和 omp。start.bat 会检测并在缺失时显示指引；如果仍然闪退，在 cmd 中手动运行 `start.bat` 查看错误。
-
-**Q: 端口 3838 被占用？**
-A: start.bat 会自动清理占用 3838 端口的旧进程。也可手动 `taskkill /F /PID <进程号>` 后重启。
-
-**Q: 切换模型后思考级别无法切换？**
-A: 每个模型有自己支持的思考级别集合（如 deepseek 仅 high/max）。下拉菜单已自适应，只显示当前模型支持的级别；不支持的模型（如 gpt-4）会禁用思考选择。
-
-**Q: 模型没有在我选的文件夹工作？**
-A: 新建对话时选择工作文件夹后，server 会重启 omp 子进程切换到该目录（约几秒）。顶部栏显示当前工作目录，可确认是否生效。
-
-**Q: API Key 存在哪里？**
-A: 存在 `~/.omp/agent/agent.db`（用户主目录），不在项目目录。项目代码通过 `homedir()` 动态定位，不包含任何凭据值。上传 GitHub 不会泄露。
