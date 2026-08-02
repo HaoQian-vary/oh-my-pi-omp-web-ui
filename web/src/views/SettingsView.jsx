@@ -27,11 +27,17 @@ export function SettingsView() {
   const st = state.state;
   const [busy, setBusy] = useState(null);
   const [loginInfo, setLoginInfo] = useState(null);
+  const [openaiConfigured, setOpenaiConfigured] = useState(false);
+  const [openaiKeyInput, setOpenaiKeyInput] = useState("");
 
   useEffect(() => {
     fetch("/api/login_providers")
       .then((r) => r.json())
       .then((j) => j.ok && setLoginInfo(j.providers))
+      .catch(() => {});
+    fetch("/api/openai_key")
+      .then((r) => r.json())
+      .then((j) => j.ok && setOpenaiConfigured(!!j.configured))
       .catch(() => {});
   }, []);
 
@@ -41,6 +47,47 @@ export function SettingsView() {
       const r = await fn();
       if (r?.ok) actions.toast(okMsg);
       else actions.toast(`${t("失败")}: ${r?.error ?? ""}`, "bad");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // OpenAI API Key：写入 ~/.omp/agent/.env（omp 启动时加载），保存后自动重启 omp 子进程
+  const saveOpenaiKey = async () => {
+    setBusy("openai-key");
+    try {
+      const r = await fetch("/api/openai_key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: openaiKeyInput.trim() }),
+      }).then((res) => res.json());
+      if (r?.ok) {
+        setOpenaiConfigured(!!r.configured);
+        setOpenaiKeyInput("");
+        actions.toast(t("OpenAI API Key 已保存，omp 已重启生效"));
+      } else {
+        actions.toast(`${t("失败")}: ${r?.error ?? ""}`, "bad");
+      }
+    } catch (e) {
+      actions.toast(String(e), "bad");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const clearOpenaiKey = async () => {
+    if (!window.confirm(t("确定清除 OpenAI API Key 吗？OpenAI 模型将不可用。"))) return;
+    setBusy("openai-key");
+    try {
+      const r = await fetch("/api/openai_key", { method: "DELETE" }).then((res) => res.json());
+      if (r?.ok) {
+        setOpenaiConfigured(false);
+        actions.toast(t("已清除 OpenAI API Key"));
+      } else {
+        actions.toast(`${t("失败")}: ${r?.error ?? ""}`, "bad");
+      }
+    } catch (e) {
+      actions.toast(String(e), "bad");
     } finally {
       setBusy(null);
     }
@@ -235,6 +282,47 @@ export function SettingsView() {
             )}
           </div>
         ))}
+
+        {/* OpenAI API Key：omp 不支持 openai 账号登录（Unknown OAuth provider），
+            API key 只能写入 ~/.omp/agent/.env 的 OPENAI_API_KEY（启动时加载）。 */}
+        <div className="border-t mt-3 pt-3" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="flex items-center gap-2 mb-1.5">
+            <IconGlobe size={13} className="text-accent shrink-0" />
+            <span className="text-[12.5px] font-medium">OpenAI API Key</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${openaiConfigured ? "border-success/40 text-success" : "border-border text-secondary"}`}>
+              {openaiConfigured ? t("已配置") : t("未配置")}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="password"
+              className="input h-7 flex-1 text-[12px] font-mono"
+              placeholder="sk-..."
+              value={openaiKeyInput}
+              onChange={(e) => setOpenaiKeyInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && openaiKeyInput.trim() && saveOpenaiKey()}
+            />
+            <button
+              className="btn h-7 text-[12px]"
+              onClick={saveOpenaiKey}
+              disabled={busy === "openai-key" || !openaiKeyInput.trim()}
+            >
+              {busy === "openai-key" ? t("保存中…") : t("保存")}
+            </button>
+            {openaiConfigured && (
+              <button
+                className="btn btn-ghost h-7 text-[12px] text-error"
+                onClick={clearOpenaiKey}
+                disabled={busy === "openai-key"}
+              >
+                {t("清除")}
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-secondary mt-1.5 leading-relaxed">
+            {t("OpenAI 不提供账号登录，API Key 写入本地 .env 文件，保存后自动重启 omp 生效。")}
+          </p>
+        </div>
       </div>
 
       {/* 系统信息 */}

@@ -1,7 +1,8 @@
 // 输入区:prompt 输入、slash 命令、autocomplete、图片上传、快捷键。
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store";
-import { IconSend, IconStop, IconPaperclip, IconImage, IconX, IconSparkle } from "../icons";
+import { api } from "../api";
+import { IconSend, IconStop, IconPaperclip, IconX, IconSparkle } from "../icons";
 import { useLang } from "../i18n";
 
 const SLASH_COMMANDS = [
@@ -16,15 +17,15 @@ const SLASH_COMMANDS = [
 export function Composer() {
   const { state, actions } = useApp();
   const { state: st } = state;
-  const isStreaming = st?.isStreaming ?? false;
+  const isStreaming = state.isStreaming ?? false;
   const { t } = useLang();
   const [text, setText] = useState("");
-  const [images, setImages] = useState([]); // {dataUrl, name}
+  const [images, setImages] = useState([]); // {dataUrl, name} 图片(截图/文件)真正读取
+  const [attachments, setAttachments] = useState([]); // {path, name} 本地文件路径引用(不读取内容,省内存)
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashIdx, setSlashIdx] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const taRef = useRef(null);
-  const fileRef = useRef(null);
   const dropRef = useRef(null);
 
   // slash 命令匹配
@@ -79,20 +80,33 @@ export function Composer() {
   }, []);
 
   const send = async () => {
-    const t = text.trim();
-    if (!t) return;
+    let msg = text.trim();
+    if (!msg && !attachments.length && !images.length) return;
+    // 只发图片/附件无文本时给默认占位文本（omp prompt 要求 message 非空）
+    if (!msg && (images.length || attachments.length)) msg = "[图片/文件]";
+    // 文件路径引用注入消息文本：agent 可通过 read 工具直接访问
+    if (attachments.length) {
+      const paths = attachments.map((a, i) => `${i + 1}. ${a.path}`).join("\n");
+      msg = `${msg ? msg + "\n\n" : ""}[${t("附加文件路径，可用 read 工具直接访问")}]\n${paths}`;
+    }
     setText("");
     setImages([]);
+    setAttachments([]);
     if (isStreaming) {
       // 运行中：作为插话（steer）发送，暂停当前输出插入新指令
-      const ok = await actions.steer(t);
-      if (!ok) actions.toast(t("插话失败"), "bad");
+      const ok = await actions.steer(msg);
+      if (ok) {
+        // 插话也显示在对话里（含图片/文件路径）
+        actions.dispatch({ type: "user_msg", text: msg, images: images.length ? images : undefined, attachments: attachments.length ? attachments : undefined });
+      } else {
+        actions.toast(t("插话失败"), "bad");
+      }
       return;
     }
-    if (t.startsWith("/")) {
+    if (msg.startsWith("/")) {
       // slash 命令作为普通 prompt 发送(后端 omp 会解析)
     }
-    await actions.sendPrompt(t, images.length ? images : undefined);
+    await actions.sendPrompt(msg, images.length ? images : undefined, attachments.length ? attachments : undefined);
   };
 
   const onKeyDown = (e) => {
@@ -134,26 +148,99 @@ export function Composer() {
     taRef.current?.focus();
   };
 
-  const pickFiles = (files) => {
-    const list = [...(files ?? [])];
-    for (const f of list) {
-      if (!f.type.startsWith("image/")) {
-        actions.toast(`${t("仅支持图片: ")}${f.name}`, "warn");
-        continue;
+  // 统一处理添加文件：图片读取为 dataUrl（截图粘贴无本地路径）；
+  // 非图片本地文件只记录路径（agent 可访问电脑，无需真正上传内容，省内存）
+  const addFiles = (files) => {
+    for (const f of [...(files ?? [])]) {
+      if (f.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const url = reader.result;
+          // 统一转 png（webp/gif 等 → png），保证后台 mimo 分析一定能读取
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.width;
+              canvas.height = img.height;
+              canvas.getContext("2d").drawImage(img, 0, 0);
+              const png = canvas.toDataURL("image/png");
+              setImages((arr) => [...arr, { dataUrl: png, name: f.name }].slice(-4));
+              actions.toast(`${t("已添加图片: ")}${f.name}`);
+            } catch {
+              setImages((arr) => [...arr, { dataUrl: url, name: f.name }].slice(-4));
+              actions.toast(`${t("已添加图片: ")}${f.name}`);
+            }
+          };
+          img.onerror = () => {
+            setImages((arr) => [...arr, { dataUrl: url, name: f.name }].slice(-4));
+            actions.toast(`${t("已添加图片: ")}${f.name}`);
+          };
+          img.src = url;
+        };
+        reader.readAsDataURL(f);
+      } else {
+        // 现代浏览器出于安全限制拿不到 File.path，这里保留兼容分支（个别环境有）
+        const p = f.path;
+        if (p) {
+          setAttachments((arr) => [...arr, { path: p, name: f.name }].slice(-8));
+          actions.toast(`${t("已添加文件（路径引用）: ")}${f.name}`);
+        } else {
+          actions.toast(`${t("无法从浏览器获取该文件路径，请点左侧回形针按钮选择文件")}`, "warn");
+        }
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImages((arr) => [...arr, { dataUrl: reader.result, name: f.name }].slice(-4));
-      };
-      reader.readAsDataURL(f);
     }
+  };
+
+  // 原生文件选择对话框：返回真实路径列表（绕开浏览器无法读本地路径的限制）
+  const pickNativeFiles = async () => {
+    try {
+      const r = await api.pickFiles();
+      if (r?.ok && r.paths?.length) {
+        const list = r.paths.map((p) => ({ path: p, name: p.split(/[\\/]/).pop() || p }));
+        setAttachments((arr) => [...arr, ...list].slice(-8));
+        actions.toast(`${t("已添加文件（路径引用）")}: ${list.length}`);
+      } else if (r && !r.ok) {
+        actions.toast(`${t("失败")}: ${r.error ?? ""}`, "bad");
+      } else {
+        actions.toast(t("已取消选择"), "warn");
+      }
+    } catch (e) {
+      actions.toast(String(e), "bad");
+    }
+  };
+
+  // 粘贴处理：文件/图片粘贴直接加入，纯文本粘贴不拦截
+  const onPaste = (e) => {
+    const files = e.clipboardData?.files;
+    if (!files || !files.length) return;
+    e.preventDefault(); // 阻止默认（避免把文件名/图片二进制插入文本）
+    addFiles(files);
   };
 
   const onDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
-    pickFiles(e.dataTransfer.files);
+    // 拖拽文件优先用 entry.fullPath 提取路径（Chromium 支持）
+    const items = e.dataTransfer?.items;
+    const entryPaths = [];
+    if (items) {
+      for (const it of items) {
+        try {
+          const entry = it.webkitGetAsEntry?.();
+          if (entry && entry.isFile && entry.fullPath) entryPaths.push(entry.fullPath);
+        } catch { /* 忽略 */ }
+      }
+    }
+    if (entryPaths.length) {
+      const list = entryPaths.map((p) => ({ path: p, name: p.split(/[\\/]/).pop() || p }));
+      setAttachments((arr) => [...arr, ...list].slice(-8));
+      actions.toast(`${t("已添加文件（路径引用）")}: ${list.length}`);
+      return;
+    }
+    addFiles(e.dataTransfer.files);
   };
+
 
   return (
     <div
@@ -201,6 +288,26 @@ export function Composer() {
           </div>
         )}
 
+        {/* 文件路径引用预览 */}
+        {attachments.length > 0 && (
+          <div className="flex gap-1.5 mb-2 flex-wrap">
+            {attachments.map((a, i) => (
+              <div key={i} className="flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-md border text-[11.5px]" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                <IconPaperclip size={11} className="text-accent shrink-0" />
+                <span className="max-w-[160px] truncate">{a.name}</span>
+                <span className="text-[10px] text-secondary max-w-[180px] truncate font-mono">{a.path}</span>
+                <button
+                  className="btn btn-icon"
+                  title={t("移除")}
+                  onClick={() => setAttachments((arr) => arr.filter((_, j) => j !== i))}
+                >
+                  <IconX size={9} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* 输入行 */}
         <div className="card overflow-hidden" style={{ background: 'var(--color-input-bg)', boxShadow: 'var(--shadow-input-inset, none)' }}>
           {/* 顶部拖拽条：拖上边缘调输入框高度 */}
@@ -213,20 +320,17 @@ export function Composer() {
             ref={taRef}
             className="w-full bg-transparent border-0 outline-none resize-none px-3 pt-2 text-[13.5px] leading-relaxed overflow-y-auto"
             style={{ color: 'var(--color-text-primary)', height: `${taHeight}px` }}
-            placeholder={isStreaming ? t("运行中… 输入内容并按 Enter 插话，或点停止终止") : t("输入消息 — Enter 发送,Shift+Enter 换行,Ctrl+Enter 发送,输入 / 查看命令")}
+            placeholder={isStreaming ? t("运行中… 输入内容并按 Enter 插话，或点停止终止") : t("输入消息 — Enter 发送,Shift+Enter 换行,Ctrl+Enter 发送,输入 / 查看命令；可直接粘贴文件/截图")}
             rows={1}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
+            onPaste={onPaste}
           />
           <div className="flex items-center gap-1 px-1.5 pb-1.5">
-            <button className="btn btn-icon" title={t("上传图片")} onClick={() => fileRef.current?.click()}>
-              <IconImage size={14} />
-            </button>
-            <button className="btn btn-icon" title={t("拖拽图片到此处")} onClick={() => fileRef.current?.click()}>
+            <button className="btn btn-icon" title={t("选择文件（获取真实路径）")} onClick={pickNativeFiles}>
               <IconPaperclip size={14} />
             </button>
-            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { pickFiles(e.target.files); e.target.value = ""; }} />
             <span className="flex-1" />
             <span className="hidden sm:inline text-[10.5px] text-secondary mr-1">
               {isStreaming ? t("输入后 Enter 插话") : t("Enter 发送")}
@@ -241,7 +345,7 @@ export function Composer() {
                 </button>
               </>
             ) : (
-              <button className="btn btn-primary h-8 px-3.5" onClick={send} disabled={!text.trim()}>
+              <button className="btn btn-primary h-8 px-3.5" onClick={send} disabled={!text.trim() && !attachments.length && !images.length}>
                 <IconSend size={13} /> {t("发送")}
               </button>
             )}

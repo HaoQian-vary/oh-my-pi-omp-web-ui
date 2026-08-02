@@ -112,6 +112,7 @@ export const api = {
       body: JSON.stringify({ start: start ?? null }),
       signal,
     }),
+  pickFiles: () => jfetch("/api/pick_files", { method: "POST" }),
   getMessages: (path) =>
     jfetch("/api/get_messages", {
       method: "POST",

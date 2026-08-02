@@ -14,7 +14,7 @@ export function Topbar() {
   const { t } = useLang();
 
   const model = st?.model;
-  const isStreaming = st?.isStreaming ?? false;
+  const isStreaming = state.isStreaming ?? false;
   const contextPct = st?.contextUsage?.percent ?? 0;
 
   // 当前模型支持的思考级别（自适应）
@@ -87,6 +87,23 @@ export function Topbar() {
         </div>
 
         <div className="flex-1" />
+
+        {/* 流程总结方式（模型左侧） */}
+        <select
+          className="h-6 rounded-md px-1.5 text-[11px] mr-1 border bg-transparent"
+          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+          value={state.flowMode}
+          title={t("流程总结方式")}
+          onChange={(e) => {
+            const v = e.target.value;
+            localStorage.setItem("omp-flow-mode", v);
+            actions.dispatch({ type: "flow_mode", mode: v });
+          }}
+        >
+          <option value="steps">{t("仅步骤")}</option>
+          <option value="ai">{t("仅 AI 总结")}</option>
+          <option value="both">{t("两者")}</option>
+        </select>
 
         {/* 模型和思考级别（带方框，放在'空闲'左侧） */}
         <div className="flex items-center gap-0 border rounded-md px-1 py-0.5" style={{ borderColor: 'var(--color-border)' }}>

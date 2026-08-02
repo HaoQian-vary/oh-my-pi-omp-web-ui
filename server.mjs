@@ -9,7 +9,7 @@
 
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import { readFile, readdir, stat, mkdir, writeFile } from "node:fs/promises";
+import { readFile, readdir, stat, mkdir, writeFile, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join, normalize, sep } from "node:path";
 import { homedir, tmpdir } from "node:os";
@@ -461,6 +461,19 @@ function runCli(args, timeoutMs = 120000) {
   });
 }
 
+// ---------- AI 流程总结（可选开关） ----------// 用当前激活模型（omp --print 非交互）生成一轮回答的流程总结。
+// 独立子进程，不进入当前 RPC 会话、不污染上下文。失败时前端回退到本地聚合。
+async function summarizeTurn(text) {
+  const model = state?.model;
+  const args = ["-p", "--mode", "text"];
+  if (model?.provider && model?.id) args.push("--model", `${model.provider}/${model.id}`);
+  const prompt =
+    "用最简洁的中文总结下面这段 AI 回合的流程，包含四部分：理解的问题、关键决策、执行的主要步骤、最终结论/交付物。工具调用阶段也要体现。只输出总结正文，不要标题和多余内容。\n\n" +
+    String(text).slice(0, 30000);
+  const stdout = await runCli([...args, prompt], 45000);
+  return stdout.replace(/\x1b\[[0-9;]*m/g, "").trim();
+}
+
 // ---------- 会话列表(读取 ~/.omp/agent/sessions) ----------
 const SESSIONS_ROOT = () => join(homedir(), ".omp", "agent", "sessions");
 
@@ -618,15 +631,10 @@ using System.Windows.Forms;
 static class Picker {
   [STAThread]
   static void Main(string[] args) {
+    bool filesMode = args.Length > 0 && args[0] == "--files";
     try {
-      var d = new FolderBrowserDialog {
-        Description = "选择工作文件夹",
-        ShowNewFolderButton = true
-      };
-      if (args.Length > 0 && Directory.Exists(args[0])) d.SelectedPath = args[0];
       // 透明置顶 owner：无窗口程序弹对话框时 Windows 前台锁定会阻止新窗口抢前台
-      // （对话框被浏览器等活动窗口压在下面）。TopMost owner 让对话框继承置顶样式，
-      // 保证永远显示在最上层。
+      // （对话框被浏览器等活动窗口压在下面）。TopMost owner 让对话框继承置顶样式。
       using (var f = new Form {
         ShowInTaskbar = false,
         Opacity = 0,
@@ -636,8 +644,22 @@ static class Picker {
       }) {
         f.Show();
         f.Activate();
-        if (d.ShowDialog(f) == DialogResult.OK) {
-          Console.Write(Convert.ToBase64String(Encoding.UTF8.GetBytes(d.SelectedPath)));
+        if (filesMode) {
+          var d = new OpenFileDialog { Multiselect = true, Title = "选择文件", CheckFileExists = true };
+          if (d.ShowDialog(f) == DialogResult.OK) {
+            foreach (var p in d.FileNames) {
+              Console.Write(Convert.ToBase64String(Encoding.UTF8.GetBytes(p)) + "\n");
+            }
+          }
+        } else {
+          var d = new FolderBrowserDialog {
+            Description = "选择工作文件夹",
+            ShowNewFolderButton = true
+          };
+          if (args.Length > 1 && Directory.Exists(args[1])) d.SelectedPath = args[1];
+          if (d.ShowDialog(f) == DialogResult.OK) {
+            Console.Write(Convert.ToBase64String(Encoding.UTF8.GetBytes(d.SelectedPath)));
+          }
         }
       }
     } catch (Exception ex) {
@@ -669,32 +691,53 @@ async function ensurePickerExe() {
   return PICKER_EXE;
 }
 
+// 运行 picker.exe 并收集 stdout（按行 base64 解码）。取消/失败返回 []
+function runPicker(args, timeoutMs = 10 * 60 * 1000) {
+  return new Promise((resolve) => {
+    const p = spawn(PICKER_EXE, args, {});
+    let out = "";
+    p.stdout.on("data", (d) => (out += d));
+    p.stderr.on("data", (d) => (out += d));
+    // 对话框长时间无人操作时兜底：10 分钟后关闭并视为取消
+    const timer = setTimeout(() => {
+      try { p.kill(); } catch { /* 已退出 */ }
+      resolve([]);
+    }, timeoutMs);
+    p.on("error", (e) => { clearTimeout(timer); resolve([]); });
+    p.on("close", (code) => {
+      clearTimeout(timer);
+      if (code !== 0) return resolve([]);
+      const lines = out.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
+      const paths = [];
+      for (const s of lines) {
+        try { paths.push(Buffer.from(s, "base64").toString("utf8")); } catch { /* 忽略坏行 */ }
+      }
+      resolve(paths);
+    });
+  });
+}
+
 function pickFolder(start = "") {
   if (process.env.OMP_PICK_FOLDER_TEST) return Promise.resolve(process.env.OMP_PICK_FOLDER_TEST);
   return (async () => {
     try {
-      const exe = await ensurePickerExe();
-      return await new Promise((resolve) => {
-        const p = spawn(exe, start ? [start] : [], {});
-        let out = "";
-        p.stdout.on("data", (d) => (out += d));
-        p.stderr.on("data", (d) => (out += d));
-        // 对话框长时间无人操作时兜底：10 分钟后关闭并视为取消
-        const timer = setTimeout(() => {
-          try { p.kill(); } catch { /* 已退出 */ }
-          resolve(null);
-        }, 10 * 60 * 1000);
-        p.on("error", (e) => { clearTimeout(timer); resolve({ error: String(e) }); });
-        p.on("close", (code) => {
-          clearTimeout(timer);
-          const s = out.trim();
-          if (code !== 0) return resolve({ error: s || `picker 退出码 ${code}` });
-          if (!s) return resolve(null);
-          try { resolve(Buffer.from(s, "base64").toString("utf8")); } catch { resolve(null); }
-        });
-      });
+      await ensurePickerExe();
+      const paths = await runPicker(start ? [start] : []);
+      return paths[0] ?? null;
     } catch (e) {
       return { error: String(e) };
+    }
+  })();
+}
+
+// 原生文件多选对话框：返回选中文件路径数组（取消/失败返回 []）
+function pickFiles() {
+  return (async () => {
+    try {
+      await ensurePickerExe();
+      return await runPicker(["--files"]);
+    } catch (e) {
+      return [];
     }
   })();
 }
@@ -713,6 +756,45 @@ async function logoutProvider(provider) {
   } finally {
     db.close();
   }
+}
+
+// ---------- OpenAI API Key（~/.omp/agent/.env） ----------
+// openai 是 API-key provider，omp 不提供 /login 流程（Unknown OAuth provider），
+// 凭据只能来自 OPENAI_API_KEY 环境变量或 omp 启动时加载的 .env 文件。
+// 这里读写 ~/.omp/agent/.env 的 OPENAI_API_KEY 行（不返回 key 本身，只返回是否已配置）。
+const OMP_ENV_FILE = () => join(homedir(), ".omp", "agent", ".env");
+
+async function readOmpEnv() {
+  try {
+    return await readFile(OMP_ENV_FILE(), "utf8");
+  } catch {
+    return "";
+  }
+}
+
+// 返回 { configured: boolean }，绝不泄露 key 内容
+async function openaiKeyStatus() {
+  const content = await readOmpEnv();
+  return { configured: /^OPENAI_API_KEY\s*=\s*\S+/m.test(content) };
+}
+
+async function setOpenaiKey(apiKey) {
+  const key = String(apiKey ?? "").trim();
+  if (!key) throw new Error("API Key 不能为空");
+  if (key.length > 512) throw new Error("API Key 长度异常");
+  const content = await readOmpEnv();
+  const lines = content.split(/\r?\n/);
+  const idx = lines.findIndex((l) => /^OPENAI_API_KEY\s*=/.test(l));
+  const line = `OPENAI_API_KEY=${key}`;
+  if (idx >= 0) lines[idx] = line;
+  else lines.push(line);
+  await writeFile(OMP_ENV_FILE(), lines.join("\n") + "\n", "utf8");
+}
+
+async function clearOpenaiKey() {
+  const content = await readOmpEnv();
+  const lines = content.split(/\r?\n/).filter((l) => !/^OPENAI_API_KEY\s*=/.test(l));
+  await writeFile(OMP_ENV_FILE(), lines.join("\n"), "utf8");
 }
 
 // 发现自定义 agents：扫描用户级和项目级 .omp/agents/*.md
@@ -991,6 +1073,13 @@ async function handleApi(pathname, req, res) {
       return json(res, 500, { ok: false, error: e.message ?? String(e) });
     }
   }
+  if (req.method === "GET" && pathname === "/api/openai_key") {
+    try {
+      return json(res, 200, { ok: true, ...(await openaiKeyStatus()) });
+    } catch (e) {
+      return json(res, 500, { ok: false, error: e.message ?? String(e) });
+    }
+  }
   if (pathname === "/api/events") {
     res.writeHead(200, {
       "Content-Type": "text/event-stream; charset=utf-8",
@@ -1006,7 +1095,7 @@ async function handleApi(pathname, req, res) {
     return;
   }
 
-  if (req.method !== "POST" || !pathname.startsWith("/api/")) {
+  if (!["GET", "POST", "DELETE"].includes(req.method) || !pathname.startsWith("/api/")) {
     if (pathname === "/api/state") return json(res, 200, { ok: true, state });
     if (pathname.startsWith("/api/")) return json(res, 405, { ok: false, error: "method not allowed" });
     return serveStatic(pathname, res);
@@ -1033,8 +1122,18 @@ async function handleApi(pathname, req, res) {
   switch (pathname) {
     case "/api/prompt": {
       if (!body?.message) return json(res, 400, { ok: false, error: "message required" });
-      const payload = { type: "prompt", message: String(body.message) };
-      if (body.images?.length) payload.images = body.images;
+      let message = String(body.message);
+      const payload = { type: "prompt", message };
+      // 前端 images 是 { dataUrl, name }；omp 期望 ImageContent[]（image block: {type, mediaType, data}）。
+      // 图片直接交给当前模型：有视觉的模型自行看图，无视觉的模型自然回复（不做额外分析调用）
+      if (body.images?.length) {
+        payload.images = body.images.map((img) => {
+          const url = typeof img === "string" ? img : img?.dataUrl;
+          const m = /^data:(image\/[^;]+);base64,(.+)$/s.exec(url ?? "");
+          if (m) return { type: "image", mediaType: m[1], data: m[2] };
+          return img; // 已是其他格式则透传
+        });
+      }
       if (streaming) payload.streamingBehavior = "followUp";
       try {
         return json(res, 200, { ok: true, data: await command("prompt", payload) });
@@ -1193,6 +1292,34 @@ async function handleApi(pathname, req, res) {
         return fail(e);
       }
     }
+    case "/api/openai_key": {
+      try {
+        if (req.method === "GET") return json(res, 200, { ok: true, ...(await openaiKeyStatus()) });
+        if (req.method === "POST") {
+          await setOpenaiKey(body?.apiKey);
+        } else if (req.method === "DELETE") {
+          await clearOpenaiKey();
+        } else {
+          return json(res, 405, { ok: false, error: "method not allowed" });
+        }
+        // .env 在 omp 启动时加载，保存/清除后重启 omp 子进程使新凭据生效
+        await switchWorkspace(WORKDIR);
+        await new Promise((res) => setTimeout(res, 1500));
+        return json(res, 200, { ok: true, ...(await openaiKeyStatus()) });
+      } catch (e) {
+        return fail(e);
+      }
+    }
+    case "/api/summarize_turn": {
+      const text = body?.text ? String(body.text) : "";
+      if (!text.trim()) return json(res, 400, { ok: false, error: "text required" });
+      try {
+        const summary = await summarizeTurn(text);
+        return json(res, 200, { ok: true, summary });
+      } catch (e) {
+        return json(res, 500, { ok: false, error: e.message ?? String(e) });
+      }
+    }
     case "/api/ui_response": {
       const { id, value, confirmed, cancelled } = body ?? {};
       if (!id) return json(res, 400, { ok: false, error: "id required" });
@@ -1236,6 +1363,14 @@ async function handleApi(pathname, req, res) {
         return json(res, 200, { ok: true, dir });
       } catch (e) {
         return fail(e);
+      }
+    }
+    case "/api/pick_files": {
+      try {
+        const paths = await pickFiles();
+        return json(res, 200, { ok: true, paths });
+      } catch (e) {
+        return json(res, 500, { ok: false, error: e.message ?? String(e) });
       }
     }
     case "/api/get_messages": {

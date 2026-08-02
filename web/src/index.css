@@ -470,6 +470,27 @@ body {
   .md hr { @apply my-4; border-color: var(--color-border); }
   .md img { @apply max-w-full rounded; }
 
+/* 代码块（highlight.js 语法高亮 + 语言标签，Codex/VSCode 风格） */
+.code-block {
+  @apply my-2 rounded-lg border overflow-hidden;
+  background: var(--color-code);
+  border-color: var(--color-border);
+}
+.code-block-head {
+  @apply px-3 py-1 text-[10.5px] font-mono uppercase tracking-wider;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+.code-block pre {
+  @apply m-0 overflow-x-auto;
+}
+.code-block pre code.hljs {
+  @apply block p-3 text-[12.5px] leading-[1.6] overflow-x-auto;
+  background: transparent;
+}
+
+
   .diff-line {
     @apply font-mono text-[12px] leading-[1.6] whitespace-pre-wrap break-all;
   }
@@ -516,6 +537,21 @@ body {
   .toast.bad { border-left-color: var(--color-error); }
 }
 
+/* hljs token 配色（GitHub Dark 风格，适配 omp-web 深色主题）——放 @layer 外避免被 Tailwind 丢弃 */
+.hljs-comment, .hljs-quote { color: #8b949e; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-doctag, .hljs-title.function_ { color: #ff7b72; }
+.hljs-string, .hljs-regexp, .hljs-meta .hljs-string, .hljs-addition { color: #a5d6ff; }
+.hljs-number, .hljs-symbol, .hljs-bullet, .hljs-attr { color: #79c0ff; }
+.hljs-title, .hljs-section, .hljs-name, .hljs-selector-id, .hljs-selector-class { color: #d2a8ff; }
+.hljs-built_in, .hljs-type, .hljs-class .hljs-title { color: #ffa657; }
+.hljs-params, .hljs-operator, .hljs-char.escape_ { color: #e6edf3; }
+.hljs-variable, .hljs-template-variable, .hljs-link { color: #79c0ff; }
+.hljs-meta, .hljs-selector-pseudo { color: #79c0ff; }
+.hljs-deletion { color: #ffa198; }
+.hljs-attribute { color: #79c0ff; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
+
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
@@ -547,4 +583,22 @@ body {
 }
 .animate-slide-up {
   animation: slide-up 0.18s ease-out;
+}
+
+/* 历史定位高亮闪烁 */
+@keyframes msg-flash {
+  0% { box-shadow: 0 0 0 2px var(--color-accent); background: var(--color-bg-elevated); }
+  100% { box-shadow: 0 0 0 0 transparent; background: transparent; }
+}
+.msg-flash {
+  animation: msg-flash 1.1s ease-out 2;
+}
+
+/* 历史抽屉滑入 */
+@keyframes drawer-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-drawer-in {
+  animation: drawer-in 0.2s ease-out;
 }
