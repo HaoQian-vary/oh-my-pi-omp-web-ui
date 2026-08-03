@@ -18,7 +18,7 @@ const NAV = [
   { id: "mcp", label: "MCP 服务器", icon: IconPlug },
   { id: "agents", label: "Agents", icon: IconBot },
   { id: "plugins", label: "插件", icon: IconPuzzle },
-  { id: "models", label: "模型", icon: IconCpu },
+  { id: "models", label: "模型管理", icon: IconCpu },
   { id: "settings", label: "设置", icon: IconSettings },
 ];
 

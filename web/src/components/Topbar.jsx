@@ -10,6 +10,7 @@ export function Topbar() {
   const { state: st, models, inspector } = state;
   const [modelOpen, setModelOpen] = useState(false);
   const [levelOpen, setLevelOpen] = useState(false);
+  const [modelQ, setModelQ] = useState("");
   const [busy, setBusy] = useState(false);
   const { t } = useLang();
 
@@ -40,11 +41,15 @@ export function Topbar() {
     return sf.split(/[\\/]/).slice(0, -1).join("/") || "—";
   }, [st?.sessionFile]);
 
-  // 按 provider 分组
+  // 按 provider 分组（可选搜索过滤：匹配 provider / 模型 id / 名称）
   const groups = {};
+  const q = modelQ.trim().toLowerCase();
   for (const m of models) {
+    if (q && !m.id.toLowerCase().includes(q) && !(m.name ?? "").toLowerCase().includes(q) && !m.provider.toLowerCase().includes(q)) continue;
     (groups[m.provider] ??= []).push(m);
   }
+  const groupEntries = Object.entries(groups);
+  const matches = q ? models.filter((m) => m.id.toLowerCase().includes(q) || (m.name ?? "").toLowerCase().includes(q) || m.provider.toLowerCase().includes(q)).length : models.length;
 
   const switchModel = async (provider, modelId) => {
     setModelOpen(false);
@@ -114,7 +119,7 @@ export function Topbar() {
               style={{ background: modelOpen ? 'var(--color-bg-elevated)' : 'transparent' }}
               onMouseEnter={(e) => { if (!modelOpen) e.currentTarget.style.background = 'var(--color-bg-elevated)'; }}
               onMouseLeave={(e) => { if (!modelOpen) e.currentTarget.style.background = 'transparent'; }}
-              onClick={(e) => { e.stopPropagation(); setModelOpen(!modelOpen); setLevelOpen(false); }}
+              onClick={(e) => { e.stopPropagation(); if (!modelOpen) setModelQ(""); setModelOpen(!modelOpen); setLevelOpen(false); }}
               disabled={busy}
               title={t("点击切换模型")}
             >
@@ -124,12 +129,23 @@ export function Topbar() {
               <IconChevronDown size={10} style={{ color: 'var(--color-text-secondary)' }} className="shrink-0" />
             </button>
             {modelOpen && (
-              <div className="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto card shadow-xl z-50 animate-fade-in" style={{ background: 'var(--color-card)' }}>
+              <div className="absolute right-0 top-full mt-1 w-72 card shadow-xl z-50 animate-fade-in" style={{ background: 'var(--color-card)' }}>
                 <div className="px-3 py-2 text-[11px] border-b" style={{ color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}>
-                  {t("模型")} · {models.length} {t("个可用")}
+                  {t("模型")} · {matches} {t("个可用")}
                 </div>
-                <div className="py-1">
-                  {Object.entries(groups).map(([provider, list]) => (
+                <div className="px-2 pt-1.5 pb-1 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                  <input
+                    autoFocus
+                    className="w-full input h-7 text-[12px] pl-6"
+                    placeholder={t("搜索模型…")}
+                    value={modelQ}
+                    onChange={(e) => setModelQ(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Escape") { setModelQ(""); setModelOpen(false); } }}
+                    style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                  />
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto py-1">
+                  {groupEntries.map(([provider, list]) => (
                     <div key={provider}>
                       <div className="px-3 pt-2 pb-1 text-[10.5px] uppercase tracking-wider font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
                         {provider}
@@ -159,6 +175,9 @@ export function Topbar() {
                   ))}
                   {!models.length && (
                     <div className="px-3 py-3 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{t("暂无可用模型")}</div>
+                  )}
+                  {models.length > 0 && !matches && (
+                    <div className="px-3 py-3 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{t("无匹配模型")}</div>
                   )}
                 </div>
               </div>

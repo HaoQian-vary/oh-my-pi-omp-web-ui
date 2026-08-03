@@ -1,10 +1,10 @@
-// 设置:Agent 设置(接真实 RPC 命令)+ Provider 配置(信息展示)+ 登录。
-import { useEffect, useState } from "react";
+// 设置:Agent 设置(接真实 RPC 命令)+ Provider 配置(信息展示)。
+import { useState } from "react";
 import { useApp } from "../store";
 import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import { fmtTokens } from "../format";
-import { IconGlobe, IconRefresh, IconUser, IconSettings } from "../icons";
+import { IconGlobe, IconSettings } from "../icons";
 
 function Switch({ checked, onChange, disabled, label }) {
   return (
@@ -26,20 +26,6 @@ export function SettingsView() {
   const { state, actions } = useApp();
   const st = state.state;
   const [busy, setBusy] = useState(null);
-  const [loginInfo, setLoginInfo] = useState(null);
-  const [openaiConfigured, setOpenaiConfigured] = useState(false);
-  const [openaiKeyInput, setOpenaiKeyInput] = useState("");
-
-  useEffect(() => {
-    fetch("/api/login_providers")
-      .then((r) => r.json())
-      .then((j) => j.ok && setLoginInfo(j.providers))
-      .catch(() => {});
-    fetch("/api/openai_key")
-      .then((r) => r.json())
-      .then((j) => j.ok && setOpenaiConfigured(!!j.configured))
-      .catch(() => {});
-  }, []);
 
   const run = async (key, fn, okMsg) => {
     setBusy(key);
@@ -52,72 +38,6 @@ export function SettingsView() {
     }
   };
 
-  // OpenAI API Key：写入 ~/.omp/agent/.env（omp 启动时加载），保存后自动重启 omp 子进程
-  const saveOpenaiKey = async () => {
-    setBusy("openai-key");
-    try {
-      const r = await fetch("/api/openai_key", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: openaiKeyInput.trim() }),
-      }).then((res) => res.json());
-      if (r?.ok) {
-        setOpenaiConfigured(!!r.configured);
-        setOpenaiKeyInput("");
-        actions.toast(t("OpenAI API Key 已保存，omp 已重启生效"));
-      } else {
-        actions.toast(`${t("失败")}: ${r?.error ?? ""}`, "bad");
-      }
-    } catch (e) {
-      actions.toast(String(e), "bad");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const clearOpenaiKey = async () => {
-    if (!window.confirm(t("确定清除 OpenAI API Key 吗？OpenAI 模型将不可用。"))) return;
-    setBusy("openai-key");
-    try {
-      const r = await fetch("/api/openai_key", { method: "DELETE" }).then((res) => res.json());
-      if (r?.ok) {
-        setOpenaiConfigured(false);
-        actions.toast(t("已清除 OpenAI API Key"));
-      } else {
-        actions.toast(`${t("失败")}: ${r?.error ?? ""}`, "bad");
-      }
-    } catch (e) {
-      actions.toast(String(e), "bad");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  // 退出登录：删除本地 API Key 凭据，之后可重新登录替换
-  const handleLogout = async (providerId) => {
-    if (!window.confirm(`确定退出 ${providerId} 的登录吗？\n\n退出后该 Provider 的 API Key 将从本地删除，模型将不可用。需要重新登录并配置新的 API Key。`)) return;
-    setBusy(`logout-${providerId}`);
-    try {
-      const r = await fetch("/api/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ providerId }),
-      }).then((res) => res.json());
-      if (r?.ok) {
-        actions.toast(`${t("已退出登录: ")}${providerId}`);
-        // 刷新登录状态列表
-        fetch("/api/login_providers")
-          .then((res) => res.json())
-          .then((j) => j.ok && setLoginInfo(j.providers))
-          .catch(() => {});
-        actions.refreshModels();
-      } else {
-        actions.toast(`${t("退出失败: ")}${r?.error ?? ""}`, "bad");
-      }
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const agent = [
     {
@@ -248,80 +168,6 @@ export function SettingsView() {
             (<span className="font-mono">~/.omp/agent/config.yml</span>)。
             {t("修改后需重启 omp 生效。本界面只读展示当前激活的 Provider 信息,避免凭据泄漏到浏览器。")}
           </div>
-        </div>
-      </div>
-
-      {/* 登录状态 */}
-      <h2 className="text-[13.5px] font-semibold mt-6 mb-2">{t("登录")}</h2>
-      <div className="card p-4">
-        {!loginInfo && <div className="text-[12.5px] text-secondary">{t("加载中…")}</div>}
-        {loginInfo && !loginInfo.length && (
-          <div className="text-[12.5px] text-secondary flex items-center gap-2">
-            <IconUser size={13} /> {t("无可用登录 Provider")}
-          </div>
-        )}
-        {loginInfo?.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 py-1.5">
-            <span className="font-mono text-[12.5px] flex-1">{p.id}</span>
-            {p.authenticated ? (
-              <>
-                <span className="text-[11.5px] text-success">{t("已登录")}</span>
-                <button
-                  className="btn btn-ghost h-6 text-[11.5px] text-error"
-                  title={t("退出登录后可在控制台重新获取 API Key 并再次登录")}
-                  onClick={() => handleLogout(p.id)}
-                  disabled={busy === `logout-${p.id}`}
-                >
-                  {busy === `logout-${p.id}` ? t("退出中…") : t("退出登录")}
-                </button>
-              </>
-            ) : (
-              <button className="btn h-6 text-[11.5px]" onClick={() => run(`login-${p.id}`, () => fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerId: p.id }) }).then((r) => r.json()), `登录流程已启动: ${p.id}`)}>
-                {t("登录")}
-              </button>
-            )}
-          </div>
-        ))}
-
-        {/* OpenAI API Key：omp 不支持 openai 账号登录（Unknown OAuth provider），
-            API key 只能写入 ~/.omp/agent/.env 的 OPENAI_API_KEY（启动时加载）。 */}
-        <div className="border-t mt-3 pt-3" style={{ borderColor: 'var(--color-border)' }}>
-          <div className="flex items-center gap-2 mb-1.5">
-            <IconGlobe size={13} className="text-accent shrink-0" />
-            <span className="text-[12.5px] font-medium">OpenAI API Key</span>
-            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${openaiConfigured ? "border-success/40 text-success" : "border-border text-secondary"}`}>
-              {openaiConfigured ? t("已配置") : t("未配置")}
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="password"
-              className="input h-7 flex-1 text-[12px] font-mono"
-              placeholder="sk-..."
-              value={openaiKeyInput}
-              onChange={(e) => setOpenaiKeyInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && openaiKeyInput.trim() && saveOpenaiKey()}
-            />
-            <button
-              className="btn h-7 text-[12px]"
-              onClick={saveOpenaiKey}
-              disabled={busy === "openai-key" || !openaiKeyInput.trim()}
-            >
-              {busy === "openai-key" ? t("保存中…") : t("保存")}
-            </button>
-            {openaiConfigured && (
-              <button
-                className="btn btn-ghost h-7 text-[12px] text-error"
-                onClick={clearOpenaiKey}
-                disabled={busy === "openai-key"}
-              >
-                {t("清除")}
-              </button>
-            )}
-          </div>
-          <p className="text-[11px] text-secondary mt-1.5 leading-relaxed">
-            {t("OpenAI 不提供账号登录，API Key 写入本地 .env 文件，保存后自动重启 omp 生效。")}
-          </p>
         </div>
       </div>
 
