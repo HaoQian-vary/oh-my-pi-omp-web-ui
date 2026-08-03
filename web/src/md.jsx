@@ -120,23 +120,96 @@ function stripInline(s) {
     .trim();
 }
 
+// ---------- 控制台命令自动识别 ----------
+// AI 回答里经常出现没包在 ``` 代码块里的裸命令行（如 `npm install ...`）。
+// 这些行渲染成普通段落，视觉上不像命令。这里在 marked 渲染前把它们自动
+// 包成代码块，复用 .code-block 样式，让命令一眼可辨。
+// 判定规则（尽量保守，避免误伤正文句子）：
+//   1. 以提示符开头（$ > PS> C:\ D:\ ~$）→ 必是命令
+//   2. 以常见命令词开头，且后面带子命令/选项/路径特征 → 是命令
+//   3. 含中文、句尾标点、常见 markdown 结构（标题/列表/引用/表格/HTML）→ 排除
+
+const PROMPT_RE = /^\s*(?:\$|PS>|C:\\|D:\\|~[/\\]?\$)/;
+const CMD_RE = /^(?:npm|npx|yarn|pnpm|pip|pip3|pipx|python|python3|py|node|bun|deno|git|cd|ls|dir|pwd|mkdir|rmdir|rm|cp|mv|touch|cat|echo|curl|wget|docker|docker-compose|kubectl|helm|brew|apt|apt-get|sudo|chmod|chown|grep|find|sed|awk|tar|unzip|zip|java|javac|mvn|gradle|dotnet|code|cmd|powershell|pwsh|taskkill|tasklist|netstat|ping|where|which|ssh|scp|rsync|systemctl|service|kill|ps|top|htop|tail|head|less|more|nslookup|tracert|ipconfig|reg|setx|start|copy|move|del|type|tree|attrib|xcopy|mysql|psql|redis-cli)\b/i;
+const SUB_CMD_RE = /^(?:install|uninstall|remove|rm|add|run|exec|start|stop|build|dev|test|init|push|pull|clone|commit|config|set|get|update|upgrade|login|logout|list|ls|show|plugin|marketplace|use|enable|disable|status|restart|version|help)\b/i;
+const OPT_RE = /^[-/]/;
+const PATH_RE = /[\\/]|:\/\/|@[\w.-]+|\.[\w]{1,8}\b/;
+
+function isCommandLine(line) {
+  const s = line.trim();
+  if (!s || s.length > 300) return false;
+  // 排除 markdown 结构
+  if (/^#{1,6}\s/.test(s)) return false; // 标题
+  if (/^[-*+]\s/.test(s)) return false; // 无序列表
+  if (/^\d+[.)]\s/.test(s)) return false; // 有序列表
+  if (/^>\s?/.test(s)) return false; // 引用
+  if (/^\|/.test(s)) return false; // 表格
+  if (/^`{3}/.test(s)) return false; // fence
+  if (/^[-=*_]{3,}\s*$/.test(s)) return false; // 分割线
+  if (/^<\/?[a-z]/i.test(s)) return false; // HTML
+  if (PROMPT_RE.test(s)) return true;
+  // 含中文 / 句尾标点 → 大概率是正文句子
+  if (/[\u4e00-\u9fff]/.test(s)) return false;
+  if (/[.!?。！？]$/.test(s)) return false;
+  const m = s.match(/^([A-Za-z][\w.-]*)/);
+  if (!m || !CMD_RE.test(s)) return false;
+  const rest = s.slice(m[0].length).trim();
+  if (!rest) return false; // 裸命令词（如单独一行 npm）不算
+  return OPT_RE.test(rest) || SUB_CMD_RE.test(rest) || PATH_RE.test(rest);
+}
+
+// 把文本中连续的裸命令行包装成 ```shell 代码块（fence 内部跳过）。
+function wrapCommandLines(text) {
+  const lines = String(text).split("\n");
+  const out = [];
+  let inFence = false;
+  let buf = [];
+  const flush = () => {
+    if (buf.length) {
+      out.push("```shell\n" + buf.join("\n") + "\n```");
+      buf = [];
+    }
+  };
+  for (const line of lines) {
+    if (/^\s*```/.test(line)) {
+      flush();
+      inFence = !inFence;
+      out.push(line);
+      continue;
+    }
+    if (inFence) {
+      out.push(line);
+      continue;
+    }
+    if (isCommandLine(line)) {
+      buf.push(line.trim());
+      continue;
+    }
+    flush();
+    out.push(line);
+  }
+  flush();
+  return out.join("\n");
+}
+
 // 从 markdown 文本中提取 ```diff / ```mermaid 块单独渲染,其余交给 marked。
 // 返回 [{ kind: "md", html } | { kind: "diff", hunks } | { kind: "mermaid", code }]
 export function useChunks(text) {
   return useMemo(() => {
     if (!text) return [];
+    const wrapped = wrapCommandLines(text);
     const re = /```(diff|mermaid)\s*\n([\s\S]*?)```/g;
     const chunks = [];
     let last = 0;
     let m;
-    while ((m = re.exec(text)) !== null) {
-      if (m.index > last) chunks.push({ kind: "md", html: marked.parse(text.slice(last, m.index)) });
+    while ((m = re.exec(wrapped)) !== null) {
+      if (m.index > last) chunks.push({ kind: "md", html: marked.parse(wrapped.slice(last, m.index)) });
       if (m[1] === "diff") chunks.push({ kind: "diff", hunks: parseDiff(m[2]) });
       else chunks.push({ kind: "mermaid", code: m[2] });
       last = m.index + m[0].length;
     }
-    if (last < text.length) chunks.push({ kind: "md", html: marked.parse(text.slice(last)) });
-    if (!chunks.length && text) chunks.push({ kind: "md", html: marked.parse(text) });
+    if (last < wrapped.length) chunks.push({ kind: "md", html: marked.parse(wrapped.slice(last)) });
+    if (!chunks.length && wrapped) chunks.push({ kind: "md", html: marked.parse(wrapped) });
     return chunks;
   }, [text]);
 }
