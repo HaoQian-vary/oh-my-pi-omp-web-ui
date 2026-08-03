@@ -797,6 +797,23 @@ async function clearOpenaiKey() {
   await writeFile(OMP_ENV_FILE(), lines.join("\n"), "utf8");
 }
 
+// 清除 OpenAI API Key 后，若当前选中模型属于 openai（已不可用），
+// 自动切换到首个可用的非 openai 模型；返回是否发生了切换。
+async function resetModelAfterOpenaiClear() {
+  if (state?.model?.provider !== "openai") return false;
+  try {
+    const data = await command("get_available_models");
+    const models = data?.models ?? [];
+    const alt = models.find((m) => m.provider !== "openai" && m.id);
+    if (!alt) return false;
+    await command("set_model", { provider: alt.provider, modelId: alt.id });
+    await refreshState();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // 发现自定义 agents：扫描用户级和项目级 .omp/agents/*.md
 async function discoverAgents() {
   const roots = [
@@ -1305,7 +1322,9 @@ async function handleApi(pathname, req, res) {
         // .env 在 omp 启动时加载，保存/清除后重启 omp 子进程使新凭据生效
         await switchWorkspace(WORKDIR);
         await new Promise((res) => setTimeout(res, 1500));
-        return json(res, 200, { ok: true, ...(await openaiKeyStatus()) });
+        // 清除后若当前模型是 openai，自动切到首个可用的非 openai 模型
+        const modelReset = req.method === "DELETE" ? await resetModelAfterOpenaiClear() : false;
+        return json(res, 200, { ok: true, modelReset, ...(await openaiKeyStatus()) });
       } catch (e) {
         return fail(e);
       }

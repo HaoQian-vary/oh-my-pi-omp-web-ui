@@ -34,6 +34,8 @@ const DICT = {
   "步": "steps",
   "流程": "Flow",
   "已清除 OpenAI API Key": "OpenAI API key cleared",
+  "已清除 OpenAI API Key 并重置模型": "OpenAI API key cleared; model reset",
+  "已退出登录，模型保留在列表中，可重新登录后使用": "Logged out; models stay listed and can be used after signing back in",
   "确定清除 OpenAI API Key 吗？OpenAI 模型将不可用。": "Clear the OpenAI API key? OpenAI models will become unavailable.",
   "OpenAI API Key 已保存，omp 已重启生效": "OpenAI API key saved; omp restarted",
   "OpenAI 不提供账号登录，API Key 写入本地 .env 文件，保存后自动重启 omp 生效。": "OpenAI has no account login; the API key is written to the local .env file and takes effect after omp auto-restarts.",
