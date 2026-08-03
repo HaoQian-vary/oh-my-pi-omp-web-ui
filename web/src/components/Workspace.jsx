@@ -22,13 +22,12 @@ export function Workspace() {
   return (
     <div className="flex-1 flex flex-col min-w-0" style={{ background: "var(--color-bg)" }}>
       <Topbar />
-      <div className="flex-1 flex flex-col min-h-0">
-        {view === "chat" && (
-          <>
-            <MessageList />
-            <Composer />
-          </>
-        )}
+      <div className="flex-1 flex flex-col min-h-0" style={{ overflow: "hidden" }}>
+        {/* 始终挂载 Chat 视图，切到其他页时用 display:none 隐藏，保持 Composer 输入状态不丢失 */}
+        <div style={{ display: view === "chat" ? undefined : "none" }} className="flex-1 flex flex-col min-h-0">
+          <MessageList />
+          <Composer />
+        </div>
         {view === "sessions" && <SessionsView />}
         {view === "prompts" && <PromptsView />}
         {view === "skills" && <SkillsView />}
