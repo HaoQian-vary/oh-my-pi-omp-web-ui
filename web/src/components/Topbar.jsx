@@ -7,14 +7,30 @@ import { useLang } from "../i18n";
 
 export function Topbar() {
   const { state, actions } = useApp();
-  const { state: st, models, inspector } = state;
+  const { state: st, models, inspector, loginInfo } = state;
   const [modelOpen, setModelOpen] = useState(false);
   const [levelOpen, setLevelOpen] = useState(false);
   const [modelQ, setModelQ] = useState("");
   const [busy, setBusy] = useState(false);
+  const [openaiConfigured, setOpenaiConfigured] = useState(false);
   const { t } = useLang();
 
+  useEffect(() => {
+    fetch("/api/openai_key")
+      .then((r) => r.json())
+      .then((j) => j.ok && setOpenaiConfigured(!!j.configured))
+      .catch(() => {});
+  }, []);
+
+  // provider 登录状态映射（openai 以 API Key 配置为准；未知 provider 默认可用）
+  const loginMap = useMemo(() => {
+    const map = {};
+    for (const p of loginInfo ?? []) map[p.id] = !!p.authenticated;
+    return map;
+  }, [loginInfo]);
   const model = st?.model;
+  const isAuthed = (provider) => (provider === "openai" ? openaiConfigured : (loginMap[provider] ?? true));
+  const currentAuthed = model ? isAuthed(model.provider) : true;
   const isStreaming = state.isStreaming ?? false;
   const contextPct = st?.contextUsage?.percent ?? 0;
 
@@ -42,14 +58,19 @@ export function Topbar() {
   }, [st?.sessionFile]);
 
   // 按 provider 分组（可选搜索过滤：匹配 provider / 模型 id / 名称）
+  // 只显示已登录可用的模型；未登录 provider 的模型不出现（当前模型例外，需可见）
   const groups = {};
   const q = modelQ.trim().toLowerCase();
   for (const m of models) {
     if (q && !m.id.toLowerCase().includes(q) && !(m.name ?? "").toLowerCase().includes(q) && !m.provider.toLowerCase().includes(q)) continue;
+    const authed = isAuthed(m.provider);
+    const isCurrentModel = model && m.provider === model.provider && m.id === model.id;
+    if (!authed && !isCurrentModel) continue;
     (groups[m.provider] ??= []).push(m);
   }
   const groupEntries = Object.entries(groups);
-  const matches = q ? models.filter((m) => m.id.toLowerCase().includes(q) || (m.name ?? "").toLowerCase().includes(q) || m.provider.toLowerCase().includes(q)).length : models.length;
+  const visibleCount = Object.values(groups).reduce((n, l) => n + l.length, 0);
+  const matches = q ? visibleCount : visibleCount;
 
   const switchModel = async (provider, modelId) => {
     setModelOpen(false);
@@ -123,8 +144,8 @@ export function Topbar() {
               disabled={busy}
               title={t("点击切换模型")}
             >
-              <span className="font-mono truncate max-w-[120px]" style={{ color: 'var(--color-text-secondary)' }}>
-                {model?.name ?? model?.id ?? t("选择模型")}
+              <span className="font-mono truncate max-w-[120px]" style={{ color: currentAuthed ? 'var(--color-text-secondary)' : 'var(--color-error)' }} title={model?.name ?? model?.id}>
+                {currentAuthed ? (model?.name ?? model?.id ?? t("选择模型")) : `${model?.name ?? model?.id ?? ""} (${t("未登录")})`}
               </span>
               <IconChevronDown size={10} style={{ color: 'var(--color-text-secondary)' }} className="shrink-0" />
             </button>
@@ -150,27 +171,31 @@ export function Topbar() {
                       <div className="px-3 pt-2 pb-1 text-[10.5px] uppercase tracking-wider font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
                         {provider}
                       </div>
-                      {list.map((m) => (
-                        <button
-                          key={`${m.provider}/${m.id}`}
-                          className="w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-100"
-                          style={{ background: 'transparent' }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-elevated)'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                          onClick={() => switchModel(m.provider, m.id)}
-                        >
-                          <span className="flex-1 min-w-0">
-                            <span className="block text-[12.5px] truncate">{m.name ?? m.id}</span>
-                            <span className="block text-[10.5px] font-mono truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                              {m.id}
-                              {m.contextWindow ? ` · ctx ${fmtTokens(m.contextWindow)}` : ""}
+                      {list.map((m) => {
+                        const authed = isAuthed(m.provider);
+                        return (
+                          <button
+                            key={`${m.provider}/${m.id}`}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-100"
+                            style={{ background: 'transparent', opacity: authed ? 1 : 0.45, cursor: authed ? 'pointer' : 'not-allowed' }}
+                            onMouseEnter={(e) => { if (authed) e.currentTarget.style.background = 'var(--color-bg-elevated)'; }}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            onClick={() => authed && switchModel(m.provider, m.id)}
+                            title={authed ? "" : t("未登录，登录后可用")}
+                          >
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-[12.5px] truncate">{m.name ?? m.id}</span>
+                              <span className="block text-[10.5px] font-mono truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                                {m.id}
+                                {m.contextWindow ? ` · ctx ${fmtTokens(m.contextWindow)}` : ""}
+                              </span>
                             </span>
-                          </span>
-                          {model?.id === m.id && model?.provider === m.provider && (
-                            <IconCheck size={13} className="shrink-0" style={{ color: 'var(--color-accent)' }} />
-                          )}
-                        </button>
-                      ))}
+                            {model?.id === m.id && model?.provider === m.provider && (
+                              <IconCheck size={13} className="shrink-0" style={{ color: 'var(--color-accent)' }} />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   ))}
                   {!models.length && (

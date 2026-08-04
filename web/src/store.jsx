@@ -30,6 +30,7 @@ const initial = {
   childLog: [], // 最近 stderr 日志(环形)
   state: null, // get_state 快照
   models: [],
+  loginInfo: [], // provider 登录状态 [{id, authenticated, ...}]
   msgs: [], // 消息卡片 {role, blocks, meta, status}
   tools: new Map(), // toolCallId -> {toolName, intent, args, status, output, isError}
   dialog: null, // extension UI 弹窗
@@ -91,6 +92,7 @@ function reducer(s, a) {
       };
     }
     case "models": return { ...s, models: a.models };
+    case "login_info": return { ...s, loginInfo: a.providers ?? [] };
     case "session_info": return { ...s, sessionInfo: a.info };
     case "msg_start": {
       // 新 assistant 消息(忽略 user 回显,用户消息已本地渲染)
@@ -487,6 +489,10 @@ export function AppProvider({ children }) {
         const r = await api.models();
         if (r?.ok) dispatch({ type: "models", models: r.models ?? [] });
       },
+      refreshLoginInfo: async () => {
+        const r = await api.loginProviders();
+        if (r?.ok) dispatch({ type: "login_info", providers: r.providers ?? [] });
+      },
       loadSessions: async () => {
         const r = await api.sessions();
         return r?.ok ? r.sessions ?? [] : [];
@@ -592,6 +598,7 @@ export function AppProvider({ children }) {
   useEffect(() => {
     connect(dispatch, stateRef);
     actions.refreshModels();
+    actions.refreshLoginInfo();
     api.state().then((r) => {
       if (r?.ok) dispatch({ type: "state", state: r.state });
     }).catch(() => {});

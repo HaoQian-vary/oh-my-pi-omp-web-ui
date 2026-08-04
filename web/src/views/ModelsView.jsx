@@ -1,6 +1,7 @@
 // 模型管理:列表、搜索、过滤、切换默认模型 + Provider 登录/API Key 管理。
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store";
+import { api } from "../api";
 import { useLang } from "../i18n";
 import { PageShell } from "./PageShell";
 import { fmtTokens, fmtCost } from "../format";
@@ -9,12 +10,11 @@ import { IconSearch, IconCheck, IconCpu, IconGlobe } from "../icons";
 export function ModelsView() {
   const { t } = useLang();
   const { state, actions } = useApp();
-  const { models, state: st } = state;
+  const { models, state: st, loginInfo } = state;
   const [q, setQ] = useState("");
   const [provider, setProvider] = useState("全部");
   const [busy, setBusy] = useState(null);
   const openaiKeyRef = useRef(null);
-  const [loginInfo, setLoginInfo] = useState(null);
   const [openaiConfigured, setOpenaiConfigured] = useState(false);
   const [openaiKeyInput, setOpenaiKeyInput] = useState("");
   // 最近见过的模型（按 provider 缓存，持久化到 localStorage）：
@@ -29,10 +29,7 @@ export function ModelsView() {
   }
 
   useEffect(() => {
-    fetch("/api/login_providers")
-      .then((r) => r.json())
-      .then((j) => j.ok && setLoginInfo(j.providers))
-      .catch(() => {});
+    actions.refreshLoginInfo();
     fetch("/api/openai_key")
       .then((r) => r.json())
       .then((j) => j.ok && setOpenaiConfigured(!!j.configured))
@@ -125,12 +122,13 @@ export function ModelsView() {
       if (r?.ok) {
         actions.toast(`${t("已退出登录: ")}${providerId}`);
         actions.toast(t("已退出登录，模型保留在列表中，可重新登录后使用"));
-        // 刷新登录状态列表
-        fetch("/api/login_providers")
-          .then((res) => res.json())
-          .then((j) => j.ok && setLoginInfo(j.providers))
-          .catch(() => {});
+        // 刷新登录状态列表（全局 store，Topbar 模型下拉同步禁用该 provider）
+        actions.refreshLoginInfo();
         actions.refreshModels();
+        // 若当前模型被自动切换（原模型不可用），刷新 state 让顶部栏同步
+        if (r.modelReset) {
+          api.state().then((j) => j?.ok && actions.dispatch({ type: "state", state: j.state })).catch(() => {});
+        }
       } else {
         actions.toast(`${t("退出失败: ")}${r?.error ?? ""}`, "bad");
       }
@@ -313,7 +311,9 @@ export function ModelsView() {
                   <td className="px-3 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       {isCurrent && (
-                        <span className="inline-flex items-center gap-1 text-[11.5px] text-success"><IconCheck size={12} /> {t("当前")}</span>
+                        <span className={`inline-flex items-center gap-1 text-[11.5px] ${authed ? "text-success" : "text-error"}`}>
+                          <IconCheck size={12} /> {authed ? t("当前") : `${t("当前")} · ${t("未登录")}`}
+                        </span>
                       )}
                       {authed ? (
                         !isCurrent && (
