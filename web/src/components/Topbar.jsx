@@ -1,7 +1,7 @@
 // 顶部栏:会话名、模型切换、思考级别、Agent 状态、停止/新建。
 import { useEffect, useMemo, useState } from "react";
 import { useApp, LEVELS } from "../store";
-import { IconChevronDown, IconPanelRight, IconStop, IconPlus, IconCheck } from "../icons";
+import { IconChevronDown, IconPanelRight, IconStop, IconPlus, IconCheck, IconRefresh } from "../icons";
 import { fmtTokens } from "../format";
 import { useLang } from "../i18n";
 
@@ -279,6 +279,16 @@ export function Topbar() {
           onClick={() => actions.dispatch({ type: "inspector", open: !inspector })}
         >
           <IconPanelRight size={14} />
+        </button>
+        <button
+          className="btn btn-icon"
+          title={t("刷新")}
+          onClick={async () => {
+            await actions.refreshAll();
+            actions.toast(t("刷新成功"));
+          }}
+        >
+          <IconRefresh size={14} />
         </button>
 
         {/* 上下文占用条 */}

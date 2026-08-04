@@ -1306,7 +1306,8 @@ async function handleApi(pathname, req, res) {
     case "/api/login": {
       if (!body?.providerId) return json(res, 400, { ok: false, error: "providerId required" });
       try {
-        const data = await command("login", { providerId: String(body.providerId) });
+        // omp 登录的输入提示最长等 600s,这里用同样长度,避免用户输入稍慢就被 60s 默认超时掐断
+        const data = await command("login", { providerId: String(body.providerId) }, { timeout: 600000 });
         return json(res, 200, { ok: true, data });
       } catch (e) {
         return fail(e);

@@ -482,6 +482,15 @@ const DICT = {
   "返回": "Back",
   "列表": "List",
   "在线": "Online",
+  "需要登录授权": "Sign-in required",
+  "复制链接": "Copy link",
+  "已复制": "Copied",
+  "打开授权页": "Open sign-in page",
+  "刷新": "Refresh",
+  "刷新成功": "Refreshed",
+  "正在刷新…": "Refreshing…",
+  "RPC 模式不支持该登录流程，请改用终端 omp login 登录": "This sign-in flow is not supported in RPC mode; use `omp login` in a terminal instead",
+  "登录超时，请重试": "Sign-in timed out, please retry",
 };
 
 const LangCtx = createContext(null);

@@ -137,6 +137,38 @@ export function ModelsView() {
     }
   };
 
+  // 登录：触发 omp 的 RPC login（会弹出 open_url / input 对话框），成功后刷新状态
+  const handleLogin = async (providerId) => {
+    setBusy(`login-${providerId}`);
+    try {
+      const r = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerId }),
+      }).then((res) => res.json());
+      if (r?.ok) {
+        actions.toast(`${t("登录流程已启动: ")}${providerId}`);
+        actions.refreshLoginInfo();
+        actions.refreshModels();
+        api.state().then((j) => j?.ok && actions.dispatch({ type: "state", state: j.state })).catch(() => {});
+      } else {
+        const err = r?.error ?? "";
+        let msg;
+        if (err.includes("interactive prompts") || err.includes("not supported in RPC mode"))
+          msg = t("RPC 模式不支持该登录流程，请改用终端 omp login 登录");
+        else if (err.includes("timeout"))
+          msg = t("登录超时，请重试");
+        else
+          msg = `${t("失败")}: ${err}`;
+        actions.toast(msg, "bad");
+      }
+    } catch (e) {
+      actions.toast(String(e), "bad");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   // provider -> 登录状态（openai 以 API Key 是否配置为准；未知 provider 默认可用）
   const loginMap = useMemo(() => {
     const map = {};
@@ -338,7 +370,11 @@ export function ModelsView() {
                           {t("配置 Key")}
                         </button>
                       ) : (
-                        <button className="btn h-6 text-[11.5px]" disabled={busy === `login-${m.provider}`} onClick={() => run(`login-${m.provider}`, () => fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ providerId: m.provider }) }).then((r) => r.json()), `登录流程已启动: ${m.provider}`)}>
+                        <button
+                          className="btn h-6 text-[11.5px]"
+                          disabled={busy === `login-${m.provider}`}
+                          onClick={() => handleLogin(m.provider)}
+                        >
                           {busy === `login-${m.provider}` ? t("登录中…") : t("登录")}
                         </button>
                       )}

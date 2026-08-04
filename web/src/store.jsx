@@ -283,11 +283,14 @@ function reducer(s, a) {
     }
     case "dialog": {
       if (!a.dialog) return { ...s, dialog: null };
-      return { ...s, dialogStack: [...s.dialogStack, a.dialog], dialog: a.dialog };
+      // FIFO:已有弹窗展示时新弹窗排队;否则直接展示。
+      // 顺序很重要:omp 登录时先发 open_url(授权页)再发 input(填 key),必须按序出现。
+      if (s.dialog) return { ...s, dialogStack: [...s.dialogStack, a.dialog] };
+      return { ...s, dialog: a.dialog };
     }
     case "dialog_close": {
-      const stack = s.dialogStack.slice(0, -1);
-      return { ...s, dialogStack: stack, dialog: stack.length ? stack[stack.length - 1] : null };
+      if (!s.dialogStack.length) return { ...s, dialog: null };
+      return { ...s, dialog: s.dialogStack[0], dialogStack: s.dialogStack.slice(1) };
     }
     case "view": return { ...s, view: a.view };
     case "flow_mode": return { ...s, flowMode: a.mode };
@@ -392,6 +395,9 @@ function handleFrame(f, dispatch, getState) {
     case "extension_ui_request": {
       if (["select", "confirm", "input", "editor", "notify"].includes(f.method)) {
         dispatch({ type: "dialog", dialog: { id: f.id, method: f.method, title: f.title, message: f.message, options: f.options, placeholder: f.placeholder, defaultValue: f.defaultValue, timeout: f.timeout } });
+      } else if (f.method === "open_url") {
+        // 登录/授权:omp 请求打开授权页。展示指引 + 链接,并提供打开/复制。
+        dispatch({ type: "dialog", dialog: { id: f.id, method: "open_url", title: f.title, url: f.url, launchUrl: f.launchUrl, instructions: f.instructions, timeout: f.timeout } });
       }
       return;
     }
@@ -496,6 +502,15 @@ export function AppProvider({ children }) {
       loadSessions: async () => {
         const r = await api.sessions();
         return r?.ok ? r.sessions ?? [] : [];
+      },
+      refreshAll: async () => {
+        // 手动刷新:重新拉取状态/模型/登录信息
+        api.state().then((r) => { if (r?.ok) dispatch({ type: "state", state: r.state }); }).catch(() => {});
+        const r = await api.models();
+        if (r?.ok) dispatch({ type: "models", models: r.models ?? [] });
+        const l = await api.loginProviders();
+        if (l?.ok) dispatch({ type: "login_info", providers: l.providers ?? [] });
+        return true;
       },
       switchSession: async (path) => {
         const r = await api.switchSession(path);

@@ -17,3 +17,7 @@ dev/
 *.log
 .DS_Store
 Thumbs.db
+
+# 安装包/测试二进制(发布物,不入库)
+omp-web_*.exe
+omp-server-test.exe

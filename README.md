@@ -2,6 +2,14 @@
 
 A local web UI for the [Oh My Pi](https://github.com/can1357/oh-my-pi) (omp) coding agent. Don't like the terminal? Use a browser instead.
 
+## 🖥️ Desktop App (Windows) — installer available
+
+We also ship a Windows desktop installer — double-click to install, no terminal or manual setup needed.
+
+- **Download**: [omp-web_0.2.2_x64-setup.exe](https://github.com/HaoQian-vary/oh-my-pi-omp-web-ui/releases/latest/download/omp-web_0.2.2_x64-setup.exe) (Windows x64)
+- A native window (Tauri) with the Node runtime + frontend bundled; starts a local backend bound to `127.0.0.1` only.
+- Requires the `omp` engine to be installed ([install](https://omp.sh/install)). macOS build in progress.
+
 ## Why this project exists
 
 **omp is an incredibly powerful terminal-based AI coding agent — but it assumes you live in the command line.**
@@ -288,6 +296,14 @@ npm start        # run backend
 # omp-web
 
 给 [Oh My Pi](https://github.com/can1357/oh-my-pi)（omp）编码代理打造的本地 Web 界面。终端里用 omp 不方便？打开浏览器就能用。
+
+## 🖥️ 桌面版（Windows）安装包
+
+同时提供 Windows 桌面版安装包，双击安装即用，无需终端和手动配置。
+
+- **下载**：[omp-web_0.2.2_x64-setup.exe](https://github.com/HaoQian-vary/oh-my-pi-omp-web-ui/releases/latest/download/omp-web_0.2.2_x64-setup.exe)（Windows x64）
+- 基于 Tauri 的原生窗口，内置 Node 运行时与前端页面；启动后自动在本地随机端口拉起后端（仅绑定 `127.0.0.1`）。
+- 需要先安装 `omp` 引擎（[安装](https://omp.sh/install)）。macOS 版开发中。
 
 ## 项目初衷
 
