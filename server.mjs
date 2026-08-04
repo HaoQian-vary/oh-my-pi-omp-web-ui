@@ -1209,6 +1209,20 @@ async function handleApi(pathname, req, res) {
       if (!body?.path) return json(res, 400, { ok: false, error: "path required" });
       try {
         await command("switch_session", { sessionPath: String(body.path) });
+        // 读取目标会话自己的工作目录，同步 WORKDIR 与 state 帧（左上角工作目录显示跟随历史会话）
+        try {
+          const detail = await readSessionDetail(String(body.path));
+          if (detail.cwd) {
+            const target = detail.cwd;
+            if (target !== WORKDIR) {
+              // 会话 cwd 与当前进程不同：需要重启 omp 子进程到该目录
+              await switchWorkspace(target);
+              await new Promise((res) => setTimeout(res, 1500));
+              // 重启后重新切回目标会话（switchWorkspace 会新建会话）
+              await command("switch_session", { sessionPath: String(body.path) });
+            }
+          }
+        } catch { /* 读取/切换失败不阻塞 */ }
         refreshState();
         return json(res, 200, { ok: true });
       } catch (e) {
