@@ -53,7 +53,7 @@ export function NewSessionDialog({ onClose, onCreated }) {
     }
   };
 
-  const defaultDir = state.state?.sessionFile?.split(/[\\/]/).slice(0, -1).join("/") ?? "";
+  const defaultDir = state.state?.cwd ?? state.state?.sessionFile?.split(/[\\/]/).slice(0, -1).join("/") ?? "";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-fade-in">

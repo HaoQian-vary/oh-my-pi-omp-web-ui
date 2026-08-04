@@ -73,8 +73,9 @@ function command(type, payload = {}, { timeout = 60000 } = {}) {
 function refreshState() {
   return command("get_state")
     .then((data) => {
-      state = data;
-      broadcast({ type: "state", data });
+      // 附加前端需要、RPC 状态里没有的字段
+      state = { ...data, cwd: WORKDIR };
+      broadcast({ type: "state", data: state });
     })
     .catch(() => {});
 }

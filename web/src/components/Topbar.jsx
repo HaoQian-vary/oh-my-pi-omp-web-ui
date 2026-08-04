@@ -45,17 +45,8 @@ export function Topbar() {
     ? (modelEfforts.includes(st?.thinkingLevel) ? st?.thinkingLevel : modelEfforts[0])
     : null;
 
-  // 当前工作目录：从 sessionFile 解析（sessions/--编码名--/xxx.jsonl → 解码编码名）
-  const workDir = useMemo(() => {
-    const sf = st?.sessionFile ?? "";
-    const m = sf.match(/sessions[\\/]+--(.+)--[\\/]+[^\\/]+\.jsonl$/);
-    if (m) {
-      // 编码名：--D--omp界面-- → D:/omp界面（-- 分隔层级）
-      const decoded = m[1].replace(/--/g, "/").replace(/^-/, "").replace(/^(.):\/(.*)/, "$1:/$2");
-      return decoded;
-    }
-    return sf.split(/[\\/]/).slice(0, -1).join("/") || "—";
-  }, [st?.sessionFile]);
+  // 当前工作目录：服务端 state 帧提供（refreshState 注入 cwd: WORKDIR）
+  const workDir = st?.cwd ?? "—";
 
   // 按 provider 分组（可选搜索过滤：匹配 provider / 模型 id / 名称）
   // 只显示已登录可用的模型；未登录 provider 的模型不出现（当前模型例外，需可见）
